@@ -22,4 +22,4 @@ ENV TEMPLATEFLOW_HOME=${TEMPLATEFLOW_HOME}
 
 RUN git submodule update --init --recursive && python3 /code/tools/download_templates.py
 
-ENTRYPOINT ["/usr/local/bin/giga_connectome"]
+ENTRYPOINT ["/usr/local/bin/wonkyconn"]

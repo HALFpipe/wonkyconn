@@ -3,19 +3,16 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "giga_connectome"
-description = "Generate connectome from fMRIPrep outputs"
+name = "wonkyconn"
+description = "Evaluating the residual motion in fMRI connectome and visualise reports."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = { file="LICENSE" }
 authors = [
   { name="Hao-Ting Wang", email="htwangtw@gmail.com" },
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
@@ -30,14 +27,14 @@ dependencies = [
 dynamic = ["version"]
 
 [project.scripts]
-giga_connectome = "giga_connectome.run:main"
+wonkyconn = "wonkyconn.run:main"
 
 [project.optional-dependencies]
 dev = [
   "black",
   "flake8",
   "pre-commit",
-  "giga_connectome[test]",
+  "wonkyconn[test]",
   'tox',
   'mypy',
   'types-all',
@@ -55,31 +52,31 @@ docs = [
   "sphinx-argparse"
 ]
 # Aliases
-tests = ["giga_connectome[test]"]
+tests = ["wonkyconn[test]"]
 
 [project.urls]
-"Homepage" = "https://github.com/bids-apps/giga_connectome"
-"Documentation" = "https://giga-connectome.readthedocs.io/en/latest/"
+"Homepage" = "https://github.com/SIMEXP/wonkyconn"
+"Documentation" = "https://wonkyconn.readthedocs.io/en/latest/"
 
 [tool.hatch.version]
 source = "vcs"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "giga_connectome/_version.py"
+version-file = "wonkyconn/_version.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [".git_archival.txt"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["giga_connectome"]
+packages = ["wonkyconn"]
 exclude = [
   ".github",
-  "giga_connectome/data/test_data"
+  "wonkyconn/data/test_data"
 ]
 
 [tool.black]
-target-version = ['py38']
-exclude = "giga_connectome/_version.py"
+target-version = ['py311']
+exclude = "wonkyconn/_version.py"
 line-length = 79
 
 [tool.mypy]
@@ -99,7 +96,7 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 module = [
     "bids.*",
-    "giga_connectome._version",
+    "wonkyconn._version",
     "h5py.*",
     "nibabel.*",
     "nilearn.*",
@@ -116,8 +113,7 @@ module = [
 [[tool.mypy.overrides]]
 ignore_errors = true
 module = [
-    'giga_connectome.tests.*',
-    'download_templates',
+    'wonkyconn.tests.*',
     'conf',
 ]
 
@@ -125,7 +121,7 @@ module = [
 minversion = "7"
 log_cli_level = "INFO"
 xfail_strict = true
-testpaths = ["giga_connectome/tests"]
+testpaths = ["wonkyconn/tests"]
 addopts = ["-ra", "--strict-config", "--strict-markers", "--doctest-modules", "-v"]
 markers = [
     "smoke: smoke tests that will run on a downsampled real dataset (deselect with '-m \"not smoke\"')",

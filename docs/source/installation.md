@@ -7,12 +7,12 @@ Pull the latest image from docker hub, available for version > `0.5.0`(Recommend
 Apptainer (formerly known as Singularity; recommended):
 
 ```bash
-apptainer build giga_connectome.simg docker://bids/giga_connectome:latest
+apptainer build wonkyconn.simg docker://haotingwang/wonkyconn:latest
 ```
 
 Docker:
 ```bash
-docker pull bids/giga_connectome:latest
+docker pull haotingwang/wonkyconn:latest
 ```
 
 ## Install as a python package
@@ -20,7 +20,7 @@ docker pull bids/giga_connectome:latest
 Install the project in a Python environment:
 
 ```bash
-pip install git+https://github.com/bids-apps/giga_connectome.git
+pip install git+https://github.com/SIMEXP/wonkyconn.git
 ```
 
 This method is available for all versions.

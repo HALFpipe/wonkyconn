@@ -4,8 +4,8 @@
 
 ```{eval-rst}
 .. argparse::
-   :prog: giga_connectome
-   :module: giga_connectome.run
+   :prog: wonkyconn
+   :module: wonkyconn.run
    :func: global_parser
 ```
 
@@ -16,7 +16,7 @@ We encourage the users to use the container version of the BIDS app, hence all d
 Users can use the preset template as examples for creating their own configuration files.
 This section will walk through the details of the configuration files and extra steps needed.
 
-All presets can be found in [`giga_connectome/data`](https://github.com/bids-apps/giga_connectome/tree/main/giga_connectome/data).
+All presets can be found in [`wonkyconn/data`](https://github.com/SIMEXP/wonkyconn/tree/main/wonkyconn/data).
 
 ### Denoising strategy
 
@@ -38,7 +38,7 @@ In a `json` file, define the customised strategy in the following format:
 }
 ```
 
-See examples in [`giga_connectome/data/denoise_strategy`](https://github.com/bids-apps/giga_connectome/tree/main/giga_connectome/data/denoise_strategy).
+See examples in [`wonkyconn/data/denoise_strategy`](https://github.com/SIMEXP/wonkyconn/tree/main/wonkyconn/data/denoise_strategy).
 
 2. Mount the path to the configuration file to the container and pass the **mounted path** to `--denoise-strategy`.
 
@@ -50,14 +50,14 @@ OUTPUT_DIR=/path/to/connectom_output
 WORKING_DIR=/path/to/working_dir
 DENOISE_CONFIG=/path/to/denoise_config.json
 
-GIGA_CONNECTOME=/path/to/giga-connectome.simg
+wonkyconn=/path/to/giga-connectome.simg
 
 apptainer run \
     --bind ${FMRIPREP_DIR}:/data/input \
     --bind ${OUTPUT_DIR}:/data/output \
     --bind ${WORKING_DIR}:/data/working \
     --bind ${DENOISE_CONFIG}:/data/denoise_config.json \
-    ${GIGA_CONNECTOME} \
+    ${wonkyconn} \
     -w /data/working \
     --denoise-strategy /data/denoise_config.json \
     /data/input \
@@ -118,7 +118,7 @@ Example:
 }
 ```
 
-See examples in [`giga_connectome/data`](https://github.com/bids-apps/giga_connectome/tree/main/giga_connectome/data).
+See examples in [`wonkyconn/data`](https://github.com/SIMEXP/wonkyconn/tree/main/wonkyconn/data).
 
 4. Mount the path to the configuration file to the container and pass the **mounted path** to `--atlas`.
 The path in your configuration file under `templateflow_dir` should be exported as an environment variable of the container.
@@ -131,7 +131,7 @@ OUTPUT_DIR=/path/to/connectom_output
 WORKING_DIR=/path/to/working_dir
 ATLAS_CONFIG=/path/to/atlas_config.json
 
-GIGA_CONNECTOME=/path/to/giga-connectome.simg
+wonkyconn=/path/to/giga-connectome.simg
 
 export APPTAINERENV_TEMPLATEFLOW_HOME=/data/atlas
 
@@ -140,7 +140,7 @@ apptainer run \
     --bind ${OUTPUT_DIR}:/data/output \
     --bind ${WORKING_DIR}:/data/working \
     --bind ${ATLAS_CONFIG}:/data/atlas_config.json \
-    ${GIGA_CONNECTOME} \
+    ${wonkyconn} \
     -w /data/working \
     --atlas /data/atlas_config.json \
     /data/input \

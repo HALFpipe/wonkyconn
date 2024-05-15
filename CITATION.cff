@@ -1,15 +1,15 @@
 cff-version: 1.2.0
 
-title: "giga_connectome"
+title: "wonkyconn"
 
-version: 0.4.1dev
+version: 0.0.1dev
 
 abstract:
-  "generate connectome from fMRIPrep outputs."
+  "Evaluating the residual motion in fMRI connectome and visualise reports."
 
 message: "If you use this software, please cite it as below."
 
-repository-code: "https://github.com/bids-apps/giga_connectome"
+repository-code: "https://github.com/simexp/wonkyconn"
 
 contact:
   - email: htwangtw@gmail.com
@@ -20,13 +20,7 @@ authors:
   - family-names: Wang
     given-names: Hao-Ting
     email: htwangtw@gmail.com
-  - family-names: Gau
-    given-names: Rémi
-  - family-names: Dessain
-    given-names: Quentin
-  - family-names: Clarke
-    given-names: Natasha
-  - family-names: Bellec
-    given-names: Pierre
+  - family-names: Walker
+    given-names: Lea
 
 license: MIT

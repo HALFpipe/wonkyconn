@@ -1,7 +1,0 @@
-{
-    "name": "icaaroma",
-    "function": "load_confounds_strategy",
-    "parameters": {
-        "denoise_strategy": "ica_aroma"
-    }
-}
