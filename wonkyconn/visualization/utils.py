@@ -47,8 +47,7 @@ def repo2data_path():
 
 def get_data_root():
     """Get motion metric data path root."""
-    default_path = Path(__file__).parents[2] / \
-        "data" / "fmriprep-denoise-benchmark"
+    default_path = Path(__file__).parents[2] / "data" / "fmriprep-denoise-benchmark"
     if not (default_path / "data_requirement.json").exists():
         default_path = repo2data_path()
     return default_path
@@ -404,32 +403,6 @@ def _get_qcfc_metric(file_path, metric, group):
         df.columns = [col.split("_")[0] for col in df.columns]
         qcfc_per_edge.append(df)
     return qcfc_per_edge
-
-
-def _get_corr_distance(files_qcfc, labels, group):
-    """Load correlation of QC/FC with node distances."""
-    qcfc_per_edge = _get_qcfc_metric(files_qcfc, metric="correlation", group=group)
-    corr_distance = []
-    for df, label in zip(qcfc_per_edge, labels):
-        atlas_name = label.split("atlas-")[-1].split("_")[0]
-        dimension = label.split("nroi-")[-1].split("_")[0]
-        pairwise_distance = get_atlas_pairwise_distance(atlas_name, dimension)
-        cols = df.columns
-        df, _ = spearmanr(pairwise_distance.iloc[:, -1], df)
-        df = pd.DataFrame(df[1:, 0], index=cols, columns=[label])
-        corr_distance.append(df)
-
-    if len(corr_distance) == 1:
-        corr_distance = corr_distance[0]
-    else:
-        corr_distance = pd.concat(corr_distance, axis=1)
-
-    return {
-        "data": corr_distance.T,
-        "order": list(GRID_LOCATION.values()),
-        "title": "Correlation between\nnodewise distance and QC-FC",
-        "label": "Pearson's correlation",
-    }
 
 
 def _corr_modularity_motion(movement, files_network, labels):

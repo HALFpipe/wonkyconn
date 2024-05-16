@@ -96,7 +96,6 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 module = [
     "bids.*",
-    "wonkyconn._version",
     "h5py.*",
     "nibabel.*",
     "nilearn.*",
@@ -105,8 +104,10 @@ module = [
     "nilearn.interfaces.*",
     "nilearn.maskers.*",
     "nilearn.masking.*",
+    "patsy.*",
     "rich.*",
-    "scipy.ndimage.*",
+    "scipy.*",
+    "statsmodels.*",
     "templateflow.*",
 ]
 

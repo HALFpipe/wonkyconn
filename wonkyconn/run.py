@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from . import __version__
-from .workflow import workflow
+from .workflow import workflow, gc_log
 
 
 def global_parser() -> argparse.ArgumentParser:
@@ -43,6 +43,7 @@ def global_parser() -> argparse.ArgumentParser:
         "--phenotypes",
         type=str,
         help="Path to the phenotype file that has the columns `participant_id`, `gender` coded as `M` and `F` and `age` in years.",
+        required=True,
     )
     parser.add_argument(
         "--seg-to-atlas",
@@ -54,6 +55,7 @@ def global_parser() -> argparse.ArgumentParser:
         help="Specify the atlas file to use for a segmentation label in the data",
     )
 
+    parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
         "--verbosity",
         help="""
@@ -69,11 +71,17 @@ def global_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: None | Sequence[str] = None) -> None:
-    """Entry point."""
     parser = global_parser()
     args = parser.parse_args(argv)
 
-    workflow(args)
+    try:
+        workflow(args)
+    except Exception as e:
+        gc_log.exception("Exception: %s", e, exc_info=True)
+        if args.debug:
+            import pdb
+
+            pdb.post_mortem()
 
 
 if __name__ == "__main__":

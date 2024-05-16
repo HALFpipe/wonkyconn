@@ -2,98 +2,103 @@
 Process fMRIPrep outputs to timeseries based on denoising strategy.
 """
 
-from __future__ import annotations
-
 import argparse
+from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
-from giga_connectome.mask import generate_gm_mask_atlas
-from giga_connectome.atlas import load_atlas_setting
-from giga_connectome.denoise import get_denoise_strategy
-from giga_connectome import methods, utils
-from giga_connectome.postprocess import run_postprocessing_dataset
+import pandas as pd
+from tqdm.auto import tqdm
 
-from giga_connectome.denoise import is_ica_aroma
-from giga_connectome.logger import gc_logger
-
-gc_log = gc_logger()
-
-
-def set_verbosity(verbosity: int | list[int]) -> None:
-    if isinstance(verbosity, list):
-        verbosity = verbosity[0]
-    if verbosity == 0:
-        gc_log.setLevel("ERROR")
-    elif verbosity == 1:
-        gc_log.setLevel("WARNING")
-    elif verbosity == 2:
-        gc_log.setLevel("INFO")
-    elif verbosity == 3:
-        gc_log.setLevel("DEBUG")
+from .atlas import Atlas
+from .base import ConnectivityMatrix
+from .features.calculate_degrees_of_freedom import calculate_degrees_of_freedom_loss
+from .features.distance_dependence import calculate_distance_dependence
+from .features.quality_control_connectivity import (
+    calculate_median_absolute,
+    calculate_qcfc,
+    calculate_qcfc_percentage,
+)
+from .file_index.bids import BIDSIndex
+from .logger import gc_log, set_verbosity
 
 
 def workflow(args: argparse.Namespace) -> None:
+    set_verbosity(args.verbosity)
     gc_log.info(vars(args))
 
-    # set file paths
+    # Check BIDS path
     bids_dir = args.bids_dir
+    index = BIDSIndex()
+    index.put(bids_dir)
+
+    # Check output path
     output_dir = args.output_dir
-    working_dir = args.work_dir
-    standardize = True  # always standardising the time series
-    smoothing_fwhm = args.smoothing_fwhm
-    calculate_average_correlation = (
-        args.calculate_intranetwork_average_correlation
-    )
-    bids_filters = utils.parse_bids_filter(args.bids_filter_file)
-
-    subjects = utils.get_subject_lists(args.participant_label, bids_dir)
-    strategy = get_denoise_strategy(args.denoise_strategy)
-
-    atlas = load_atlas_setting(args.atlas)
-
-    set_verbosity(args.verbosity)
-
-    # check output path
     output_dir.mkdir(parents=True, exist_ok=True)
-    working_dir.mkdir(parents=True, exist_ok=True)
 
-    # get template information; currently we only support the fmriprep defaults
-    template = (
-        "MNI152NLin6Asym" if is_ica_aroma(strategy) else "MNI152NLin2009cAsym"
+    # Load data frame
+    data_frame = pd.read_csv(
+        args.phenotypes,
+        sep="\t",
+        index_col="participant_id",
+        dtype={"participant_id": str},
     )
+    if "gender" not in data_frame.columns:
+        raise ValueError('Phenotypes file is missing the "gender" column')
+    if "age" not in data_frame.columns:
+        raise ValueError('Phenotypes file is missing the "age" column')
 
-    gc_log.info(f"Indexing BIDS directory:\n\t{bids_dir}")
+    # Load atlases
+    seg_to_atlas: dict[str, Atlas] = {
+        seg: Atlas.create(seg, Path(atlas_path_str))
+        for seg, atlas_path_str in args.seg_to_atlas
+    }
 
-    utils.create_ds_description(output_dir)
-    utils.create_sidecar(output_dir / "meas-PearsonCorrelation_relmat.json")
-    methods.generate_method_section(
-        output_dir=output_dir,
-        atlas=atlas["name"],
-        smoothing_fwhm=smoothing_fwhm,
-        standardize="zscore",
-        strategy=args.denoise_strategy,
-        mni_space=template,
-        average_correlation=calculate_average_correlation,
+    seg_to_connectivity_matrices: defaultdict[str, list[ConnectivityMatrix]] = (
+        defaultdict(list)
     )
+    for timeseries_path in index.get(suffix="timeseries", extension=".tsv"):
+        query = dict(**index.get_tags(timeseries_path))
+        del query["suffix"]
 
-    for subject in subjects:
-        subj_data, _ = utils.get_bids_images(
-            [subject], template, bids_dir, args.reindex_bids, bids_filters
-        )
-        group_mask, resampled_atlases = generate_gm_mask_atlas(
-            working_dir, atlas, template, subj_data["mask"]
-        )
+        metadata = index.get_metadata(timeseries_path)
+        if not metadata:
+            gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
+            continue
 
-        gc_log.info(f"Generate subject level connectomes: sub-{subject}")
+        for relmat_path in index.get(suffix="relmat", **query):
+            seg = index.get_tag_value(relmat_path, "seg")
+            if seg not in seg_to_atlas:
+                gc_log.warning(f"Skipping {relmat_path} due to missing atlas for {seg}")
+                continue
+            connectivity_matrix = ConnectivityMatrix(relmat_path, metadata)
+            seg_to_connectivity_matrices[seg].append(connectivity_matrix)
 
-        run_postprocessing_dataset(
-            strategy,
-            atlas,
-            resampled_atlases,
-            subj_data["bold"],
-            group_mask,
-            standardize,
-            smoothing_fwhm,
-            output_dir,
-            calculate_average_correlation,
+    if not seg_to_connectivity_matrices:
+        raise ValueError("No connectivity matrices found")
+
+    records: list[dict[str, Any]] = []
+    for seg, connectivity_matrices in tqdm(
+        seg_to_connectivity_matrices.items(), unit="seg"
+    ):
+        seg_subjects = [
+            index.get_tag_value(c.path, "sub") for c in connectivity_matrices
+        ]
+        seg_data_frame = data_frame.loc[seg_subjects]
+
+        qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices)
+
+        atlas = seg_to_atlas[seg]
+        record = dict(
+            seg=seg,
+            median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
+            percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
+            distance_dependence=calculate_distance_dependence(qcfc, atlas),
+            degrees_of_freedom_loss=calculate_degrees_of_freedom_loss(
+                connectivity_matrices
+            ),
         )
-    return
+        records.append(record)
+
+    result_frame = pd.DataFrame.from_records(records)
+    result_frame.to_csv(output_dir / "metrics.tsv", sep="\t", index=False)
