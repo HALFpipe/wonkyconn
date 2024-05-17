@@ -1,52 +1,14 @@
-from typing import Iterable, NamedTuple
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
-import scipy
 from numpy import typing as npt
 from patsy.highlevel import dmatrix
+from statsmodels.stats.multitest import multipletests
 from tqdm.auto import tqdm
 
 from ..base import ConnectivityMatrix
-
-from statsmodels.stats.multitest import multipletests
-
-
-class PartialCorrelationResult(NamedTuple):
-    correlation: float
-    p_value: float
-
-
-def partial_correlation(
-    x: npt.NDArray[np.float64],
-    y: npt.NDArray[np.float64],
-    cov: npt.NDArray[np.float64] | None = None,
-) -> PartialCorrelationResult:
-    """A minimal implementation of partial correlation.
-
-    Parameters
-    ----------
-    x, y : np.ndarray
-        Variable of interest.
-
-    cov : None, np.ndarray
-        Variable to be removed from variable of interest.
-        If None, do a normal pearson's correlation.
-
-    Returns
-    -------
-    dict
-        Correlation and p-value.
-    """
-    if cov is not None:
-        beta_cov_x = np.linalg.lstsq(cov, x)[0]
-        beta_cov_y = np.linalg.lstsq(cov, y)[0]
-        resid_x = x - cov.dot(beta_cov_x)
-        resid_y = y - cov.dot(beta_cov_y)
-        r, p_value = scipy.stats.pearsonr(resid_x, resid_y)
-    else:
-        r, p_value = scipy.stats.pearsonr(x, y)
-    return PartialCorrelationResult(r, p_value)
+from ..correlation import correlation_p_value, partial_correlation
 
 
 def calculate_qcfc(
@@ -88,20 +50,17 @@ def calculate_qcfc(
         ],
         axis=2,
     )
-    n, _, _ = connectivity_array.shape
+    n, _, m = connectivity_array.shape
 
-    indices = list(zip(*np.tril_indices(n, k=-1), strict=True))
+    i, j = np.tril_indices(n, k=-1)
+    correlation = partial_correlation(
+        connectivity_array[i, j], metrics.to_numpy(), np.asarray(covariates)
+    )
+    p_value = correlation_p_value(correlation, m)
 
-    records = list()
-    for i, j in tqdm(indices, desc="Calculating QC-FC", leave=False):
-        record = partial_correlation(
-            connectivity_array[i, j], metrics, covariates
-        )._asdict()
-        record["i"] = i
-        record["j"] = j
-        records.append(record)
+    qcfc = pd.DataFrame(dict(i=i, j=j, correlation=correlation, p_value=p_value))
+    qcfc = qcfc.set_index(["i", "j"])
 
-    qcfc = pd.DataFrame.from_records(records, index=["i", "j"])
     return qcfc
 
 

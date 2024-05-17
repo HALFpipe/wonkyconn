@@ -7,22 +7,23 @@ name = "wonkyconn"
 description = "Evaluating the residual motion in fMRI connectome and visualise reports."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file="LICENSE" }
-authors = [
-  { name="Hao-Ting Wang", email="htwangtw@gmail.com" },
-]
+license = { file = "LICENSE" }
+authors = [{ name = "Hao-Ting Wang", email = "htwangtw@gmail.com" }]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "nilearn[plotting] >=0.10.3",
-  "pybids >=0.15.0, <0.16.0",
-  "templateflow < 23.0.0",
   "setuptools",
-  "jinja2 >= 2.0",
+  "numpy",
+  "scipy",
+  "patsy",
+  "pandas",
   "rich",
+  "numba",
+  "seaborn",
+  "matplotlib",
 ]
 dynamic = ["version"]
 
@@ -35,22 +36,14 @@ dev = [
   "flake8",
   "pre-commit",
   "wonkyconn[test]",
-  'tox',
-  'mypy',
-  'types-all',
-  'pandas-stubs',
-  'types-tqdm'
+  "tox",
+  "mypy",
+  "types-all",
+  "pandas-stubs",
+  "types-tqdm",
 ]
-test = [
-  "pytest",
-  "pytest-cov",
-]
-docs = [
-  "sphinx",
-  "sphinx_rtd_theme",
-  "myst-parser",
-  "sphinx-argparse"
-]
+test = ["nibabel", "nilearn", "pytest", "pytest-cov", "templateflow < 23.0.0"]
+docs = ["sphinx", "sphinx_rtd_theme", "myst-parser", "sphinx-argparse"]
 # Aliases
 tests = ["wonkyconn[test]"]
 
@@ -69,13 +62,10 @@ exclude = [".git_archival.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["wonkyconn"]
-exclude = [
-  ".github",
-  "wonkyconn/data/test_data"
-]
+exclude = [".github", "wonkyconn/data/test_data"]
 
 [tool.black]
-target-version = ['py311']
+target-version = ["py311"]
 exclude = "wonkyconn/_version.py"
 line-length = 79
 
@@ -84,7 +74,7 @@ check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
-enable_error_code = ["ignore-without-code", "redundant-expr"]  # "truthy-bool"
+enable_error_code = ["ignore-without-code", "redundant-expr"] # "truthy-bool"
 no_implicit_optional = true
 show_error_codes = true
 # strict = true
@@ -95,36 +85,34 @@ warn_unused_ignores = true
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = [
-    "bids.*",
-    "h5py.*",
-    "nibabel.*",
-    "nilearn.*",
-    "nilearn.connectome.*",
-    "nilearn.image.*",
-    "nilearn.interfaces.*",
-    "nilearn.maskers.*",
-    "nilearn.masking.*",
-    "patsy.*",
-    "rich.*",
-    "scipy.*",
-    "statsmodels.*",
-    "templateflow.*",
+  "bids.*",
+  "matplotlib.*",
+  "numba.*",
+  "patsy.*",
+  "rich.*",
+  "scipy.*",
+  "seaborn.*",
+  "statsmodels.*",
+  "templateflow.*",
 ]
 
 [[tool.mypy.overrides]]
 ignore_errors = true
-module = [
-    'wonkyconn.tests.*',
-    'conf',
-]
+module = ["wonkyconn.tests.*", "conf"]
 
 [tool.pytest.ini_options]
+markers = [
+  "smoke: smoke tests that will run on a simulated dataset (deselect with '-m \"not smoke\"')",
+]
+# filterwarnings = ["error"]
 minversion = "7"
 log_cli_level = "INFO"
 xfail_strict = true
 testpaths = ["wonkyconn/tests"]
-addopts = ["-ra", "--strict-config", "--strict-markers", "--doctest-modules", "-v"]
-markers = [
-    "smoke: smoke tests that will run on a downsampled real dataset (deselect with '-m \"not smoke\"')",
+addopts = [
+  "-ra",
+  "--strict-config",
+  "--strict-markers",
+  "--doctest-modules",
+  "-v",
 ]
-# filterwarnings = ["error"]

@@ -37,8 +37,13 @@ def global_parser() -> argparse.ArgumentParser:
         choices=["group"],
     )
 
-    parser.add_argument("-v", "--version", action="version", version=__version__)
-
+    parser.add_argument(
+        "--group-by",
+        type=str,
+        nargs="+",
+        default=["seg"],
+        help="Select which tags to group the connectivity matrices by. Default is `seg`.",
+    )
     parser.add_argument(
         "--phenotypes",
         type=str,
@@ -55,6 +60,7 @@ def global_parser() -> argparse.ArgumentParser:
         help="Specify the atlas file to use for a segmentation label in the data",
     )
 
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
         "--verbosity",

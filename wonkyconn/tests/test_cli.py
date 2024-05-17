@@ -35,7 +35,10 @@ def test_help(capsys):
     except SystemExit:
         pass
     captured = capsys.readouterr()
-    assert "show program's version number and exit" in captured.out
+    assert (
+        "Evaluating the residual motion in fMRI connectome and visualize reports"
+        in captured.out
+    )
 
 
 def _copy_file(path: Path, new_path: Path, sub: str) -> None:
@@ -112,6 +115,9 @@ def test_smoke(tmp_path: Path):
     argv = [
         "--phenotypes",
         str(phenotypes_path),
+        "--group-by",
+        "seg",
+        "desc",
         *seg_to_atlas_args,
         str(bids_dir),
         str(output_dir),
@@ -121,30 +127,5 @@ def test_smoke(tmp_path: Path):
 
     workflow(args)
 
-    # output_folder = output_dir / "sub-1" / "ses-timepoint1" / "func"
-
-    # base = (
-    #     "sub-1_ses-timepoint1_task-probabilisticclassification"
-    #     "_run-01_space-MNI152NLin2009cAsym_res-2"
-    #     "_atlas-Schaefer20187Networks"
-    # )
-
-    # relmat_file = output_folder / (
-    #     base + "_meas-PearsonCorrelation" + "_desc-100Parcels7NetworksSimple_relmat.tsv"
-    # )
-    # assert relmat_file.exists()
-    # relmat = pd.read_csv(relmat_file, sep="\t")
-    # assert len(relmat) == 100
-
-    # json_file = relmat_file = output_folder / (base + "_timeseries.json")
-    # assert json_file.exists()
-    # with open(json_file, "r") as f:
-    #     content = json.load(f)
-    #     assert content.get("SamplingFrequency") == 0.5
-
-    # timeseries_file = relmat_file = output_folder / (
-    #     base + "_desc-100Parcels7NetworksSimple_timeseries.tsv"
-    # )
-    # assert timeseries_file.exists()
-    # timeseries = pd.read_csv(timeseries_file, sep="\t")
-    # assert len(timeseries.columns) == 100
+    assert (output_dir / "metrics.tsv").is_file()
+    assert (output_dir / "metrics.png").is_file()
