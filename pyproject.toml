@@ -19,7 +19,7 @@ dependencies = [
   "numpy",
   "scipy",
   "patsy",
-  "pandas",
+  "pandas>=2.0",
   "rich",
   "numba",
   "seaborn",
@@ -53,6 +53,7 @@ tests = ["wonkyconn[test]"]
 
 [tool.hatch.version]
 source = "vcs"
+fallback-version = "0.0.0+ci"   # <-- tmp fallback version for CI
 
 [tool.hatch.build.hooks.vcs]
 version-file = "wonkyconn/_version.py"

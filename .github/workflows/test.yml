@@ -120,6 +120,10 @@ jobs:
       run: pip install dist/*.tar.gz
     - name: Install archive
       if: matrix.package == 'archive'
+      env:
+        # Either of these works; use both if you still have setuptools-scm as a fallback
+        HATCH_VCS_FALLBACK_VERSION: 0.0.0+ci
+        SETUPTOOLS_SCM_PRETEND_VERSION: 0.0.0+ci
       run: pip install archive/archive.tgz
 
   test-coverage:
