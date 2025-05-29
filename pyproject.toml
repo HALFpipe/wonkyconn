@@ -24,6 +24,7 @@ dependencies = [
   "numba",
   "seaborn",
   "matplotlib",
+  "statsmodels",
 ]
 dynamic = ["version"]
 
@@ -38,7 +39,6 @@ dev = [
   "wonkyconn[test]",
   "tox",
   "mypy",
-  "types-all",
   "pandas-stubs",
   "types-tqdm",
 ]
@@ -94,6 +94,8 @@ module = [
   "seaborn.*",
   "statsmodels.*",
   "templateflow.*",
+  "pyrsistent.*",
+  "nibabel.*",
 ]
 
 [[tool.mypy.overrides]]

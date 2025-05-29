@@ -49,7 +49,9 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         relmat = pd.read_csv(path, sep="\t")
         (n,) = set(relmat.shape)
 
-        array = scipy.spatial.distance.squareform(relmat.to_numpy() - np.eye(n))
+        array = scipy.spatial.distance.squareform(
+            relmat.to_numpy() - np.eye(n)
+        )
         np.random.shuffle(array)
 
         new_array = scipy.spatial.distance.squareform(array) + np.eye(n)
@@ -66,11 +68,12 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         copyfile(path, new_path)
 
 
+# hi test
 @pytest.mark.smoke
 def test_smoke(tmp_path: Path):
     data_path = Path(
         resource_filename(
-            "wonkyconn", "data/test_data/connectome_Schaefer20187Networks_dev"
+            "wonkyconn", "data/test_data/connectome_Schaefer2018"
         )
     )
 

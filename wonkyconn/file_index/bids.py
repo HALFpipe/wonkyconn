@@ -116,7 +116,9 @@ class BIDSIndex(FileIndex):
     def get_metadata(self, path: Path) -> dict[str, Any]:
         metadata: dict[str, Any] = dict()
 
-        for metadata_path in self.get_associated_paths(path, extension=".json"):
+        for metadata_path in self.get_associated_paths(
+            path, extension=".json"
+        ):
             with metadata_path.open("r") as file:
                 metadata.update(json.load(file))
 

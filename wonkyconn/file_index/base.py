@@ -92,7 +92,9 @@ class FileIndex:
     def get_tag_mapping(self, key: str) -> Mapping[str, set[Path]]:
         return self.paths_by_tags[key]
 
-    def get_tag_values(self, key: str, paths: set[Path] | None = None) -> set[str]:
+    def get_tag_values(
+        self, key: str, paths: set[Path] | None = None
+    ) -> set[str]:
         if key not in self.paths_by_tags:
             return set()
 
@@ -100,7 +102,9 @@ class FileIndex:
             return set(self.paths_by_tags[key].keys())
 
         return set(
-            k for k, v in self.paths_by_tags[key].items() if not paths.isdisjoint(v)
+            k
+            for k, v in self.paths_by_tags[key].items()
+            if not paths.isdisjoint(v)
         )
 
     def get_tag_groups(
@@ -112,7 +116,13 @@ class FileIndex:
             paths = set(self.tags_by_paths.keys())
 
         groups: set[Mapping[str, str]] = {
-            pmap({k: v for k, v in self.tags_by_paths[path].items() if k in keys})
+            pmap(
+                {
+                    k: v
+                    for k, v in self.tags_by_paths[path].items()
+                    if k in keys
+                }
+            )
             for path in paths
         }
 

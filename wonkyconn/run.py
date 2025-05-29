@@ -60,7 +60,9 @@ def global_parser() -> argparse.ArgumentParser:
         help="Specify the atlas file to use for a segmentation label in the data",
     )
 
-    parser.add_argument("-v", "--version", action="version", version=__version__)
+    parser.add_argument(
+        "-v", "--version", action="version", version=__version__
+    )
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
         "--verbosity",

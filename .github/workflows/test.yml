@@ -50,13 +50,13 @@ jobs:
     - uses: actions/cache@v4
       id: cache
       env:
-        cache-name: ds000017
+        cache-name: ds000017-giga-connectome-outputs
       with:
         path: /home/runner/work/wonkyconn/wonkyconn/wonkyconn/data/test_data
         key: ${{ env.cache-name }}
 
     - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      name: Download fmriprep derivative of ds000017
+      name: Download giga connectome outputs for ds000017
       id: download
       run: tox -e test_data
 

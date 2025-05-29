@@ -93,10 +93,14 @@ class DsegAtlas(Atlas):
     def get_array(self) -> npt.NDArray[np.int64]:
         return np.asarray(self.image.dataobj, dtype=np.int64)
 
-    def _check_single_connected_component(self, array: npt.NDArray[np.int64]) -> None:
+    def _check_single_connected_component(
+        self, array: npt.NDArray[np.int64]
+    ) -> None:
         for i in range(1, array.max() + 1):
             mask = array == i
-            _, num_features = scipy.ndimage.label(mask, structure=self.structure)
+            _, num_features = scipy.ndimage.label(
+                mask, structure=self.structure
+            )
             if num_features > 1:
                 gc_log.warning(
                     f'Atlas "{self.seg}" region {i} has more than a single connected component'
@@ -107,7 +111,9 @@ class DsegAtlas(Atlas):
         self._check_single_connected_component(array)
         return np.asarray(
             scipy.ndimage.center_of_mass(
-                input=array > 0, labels=array, index=np.arange(1, array.max() + 1)
+                input=array > 0,
+                labels=array,
+                index=np.arange(1, array.max() + 1),
             )
         )
 

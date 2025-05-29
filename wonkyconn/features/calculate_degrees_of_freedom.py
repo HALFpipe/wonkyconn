@@ -4,7 +4,6 @@ from functools import partial
 from typing import NamedTuple, Sequence
 
 import numpy as np
-from numpy import typing as npt
 import pandas as pd
 
 from ..base import ConnectivityMatrix
@@ -29,13 +28,11 @@ def calculate_degrees_of_freedom_loss(
     - float: The percentage of degrees of freedom lost.
 
     """
-
-    count: npt.NDArray[np.int64] = np.asarray(
-        [
-            connectivity_matrix.load().shape[0]
-            for connectivity_matrix in connectivity_matrices
-        ]
-    )
+    # seann: ensure count is a list of integers instead of a numpy array
+    count: list[int] = [
+        connectivity_matrix.load().shape[0]
+        for connectivity_matrix in connectivity_matrices
+    ]
 
     calculate = partial(_calculate_for_key, connectivity_matrices, count)
     return DegreesOfFreedomLossResult(
@@ -49,8 +46,11 @@ def calculate_degrees_of_freedom_loss(
     )
 
 
+# seann: ensure function accepts sequence of integers
 def _calculate_for_key(
-    connectivity_matrices: list[ConnectivityMatrix], count: list[int], key: str
+    connectivity_matrices: list[ConnectivityMatrix],
+    count: Sequence[int],
+    key: str,
 ) -> float:
     values: Sequence[int | list[str] | None] = [
         connectivity_matrix.metadata.get(key, None)

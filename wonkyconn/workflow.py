@@ -3,7 +3,7 @@ Process fMRIPrep outputs to timeseries based on denoising strategy.
 """
 
 import argparse
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +12,9 @@ from tqdm.auto import tqdm
 
 from .atlas import Atlas
 from .base import ConnectivityMatrix
-from .features.calculate_degrees_of_freedom import calculate_degrees_of_freedom_loss
+from .features.calculate_degrees_of_freedom import (
+    calculate_degrees_of_freedom_loss,
+)
 from .features.distance_dependence import calculate_distance_dependence
 from .features.quality_control_connectivity import (
     calculate_median_absolute,
@@ -46,23 +48,42 @@ def workflow(args: argparse.Namespace) -> None:
         for seg, atlas_path_str in args.seg_to_atlas
     }
 
-    group_by = args.group_by
-    Group = namedtuple("Group", group_by)
+    # Seann: Get the specified atlas passed to CLI
+    specified_atlas = list(seg_to_atlas.keys())[0]
+    gc_log.info(f"Will only process matrices for atlas: {specified_atlas}")
 
-    grouped_connectivity_matrix: defaultdict[Group, list[ConnectivityMatrix]] = (
-        defaultdict(list)
-    )
+    # Seann: changed from using namedtuple to a dict to avoid type error
+    group_by = args.group_by
+
+    grouped_connectivity_matrix: defaultdict[
+        tuple[str, ...], list[ConnectivityMatrix]
+    ] = defaultdict(list)
+
     for timeseries_path in index.get(suffix="timeseries", extension=".tsv"):
         query = dict(**index.get_tags(timeseries_path))
         del query["suffix"]
 
         metadata = index.get_metadata(timeseries_path)
         if not metadata:
-            gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
+            gc_log.warning(
+                f"Skipping {timeseries_path} due to missing metadata"
+            )
             continue
 
+        # Seann: Filter connectivity matrices by atlas type
         for relmat_path in index.get(suffix="relmat", **query):
-            group = Group(*(index.get_tag_value(relmat_path, key) for key in group_by))
+            # Filter matrices by atlas type
+            matrix_seg = index.get_tag_value(relmat_path, "seg")
+            if matrix_seg != specified_atlas:
+                gc_log.debug(f"Skipping matrix with atlas {matrix_seg}")
+                continue
+
+            # changed from Group to tuple to avoid type error
+            group = tuple(
+                index.get_tag_value(relmat_path, key) or "NA"
+                for key in group_by
+            )
+
             connectivity_matrix = ConnectivityMatrix(relmat_path, metadata)
             grouped_connectivity_matrix[group].append(connectivity_matrix)
 
@@ -73,8 +94,10 @@ def workflow(args: argparse.Namespace) -> None:
     for group, connectivity_matrices in tqdm(
         grouped_connectivity_matrix.items(), unit="groups"
     ):
-        record = make_record(index, data_frame, seg_to_atlas, connectivity_matrices)
-        record.update(group._asdict())
+        record = make_record(
+            index, data_frame, seg_to_atlas, connectivity_matrices
+        )
+        record.update(dict(zip(group_by, group)))
         records.append(record)
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
@@ -89,12 +112,22 @@ def make_record(
     seg_to_atlas: dict[str, Atlas],
     connectivity_matrices: list[ConnectivityMatrix],
 ) -> dict[str, Any]:
-    seg_subjects = [index.get_tag_value(c.path, "sub") for c in connectivity_matrices]
-    seg_data_frame = data_frame.loc[seg_subjects]
 
+    # seann: Add debugging to see what the atlas dictionary contains
+    gc_log.info(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
+
+    # seann: added sub- tag when looking up subjects
+    seg_subjects = [
+        f"sub-{index.get_tag_value(c.path, 'sub')}"
+        for c in connectivity_matrices
+    ]
+
+    seg_data_frame = data_frame.loc[seg_subjects]
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices)
 
-    (seg,) = index.get_tag_values("seg", {c.path for c in connectivity_matrices})
+    (seg,) = index.get_tag_values(
+        "seg", {c.path for c in connectivity_matrices}
+    )
     atlas = seg_to_atlas[seg]
 
     record = dict(

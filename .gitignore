@@ -2,6 +2,10 @@
 */data/test_data/
 output/
 work/
+wonkyconnenv/
+wonkyconn_outputs/
+giga_connectome_outputs/
+local_call_cmds
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

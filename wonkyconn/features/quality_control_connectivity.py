@@ -45,7 +45,9 @@ def calculate_qcfc(
     connectivity_arrays = [
         connectivity_matrix.load()
         for connectivity_matrix in tqdm(
-            connectivity_matrices, desc="Loading connectivity matrices", leave=False
+            connectivity_matrices,
+            desc="Loading connectivity matrices",
+            leave=False,
         )
     ]
 
@@ -64,19 +66,23 @@ def calculate_qcfc(
 
     p_value = correlation_p_value(correlation, m)
 
-    qcfc = pd.DataFrame(dict(i=i, j=j, correlation=correlation, p_value=p_value))
+    qcfc = pd.DataFrame(
+        dict(i=i, j=j, correlation=correlation, p_value=p_value)
+    )
     qcfc = qcfc.set_index(["i", "j"])
 
     return qcfc
 
 
-def calculate_median_absolute(x: pd.Series) -> float:
+# seann: added type for series
+def calculate_median_absolute(x: pd.Series[float]) -> float:
     """Calculate Absolute median value"""
     return x.abs().median()
 
 
+# seann: added type for series
 def significant_level(
-    x: pd.Series, alpha: float = 0.05, correction: str | None = None
+    x: pd.Series[float], alpha: float = 0.05, correction: str | None = None
 ) -> npt.NDArray[np.bool_]:
     """
     Apply FDR correction to a pandas.Series p-value object.
@@ -92,7 +98,7 @@ def significant_level(
 
     method : None or str
         Default as None for no multiple comparison
-        Mutiple comparison methods.
+        Multiple comparison methods.
         See statsmodels.stats.multitest.multipletests
 
     Returns
@@ -121,4 +127,5 @@ def calculate_qcfc_percentage(qcfc: pd.DataFrame) -> float:
     float
         The percentage of significant QC-FC relationships.
     """
-    return 100 * significant_level(qcfc.p_value).mean()
+    # seann: cast mean p_value to float for type consistency
+    return 100 * float(significant_level(qcfc.p_value).mean())
