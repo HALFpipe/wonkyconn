@@ -18,9 +18,7 @@ def test_dseg_atlas() -> None:
         "Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.Centroid_RAS.csv"
     )
     _centroids = pd.read_csv(url).loc[:, ["R", "A", "S"]].values
-    _distance_matrix = scipy.spatial.distance.squareform(
-        scipy.spatial.distance.pdist(_centroids)
-    )
+    _distance_matrix = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(_centroids))
 
     path = get_template(
         template="MNI152NLin6Asym",
@@ -67,9 +65,7 @@ def test_probseg_atlas() -> None:
     assert isinstance(path, Path)
 
     _centroids = _get_centroids(path)
-    _distance_matrix = scipy.spatial.distance.squareform(
-        scipy.spatial.distance.pdist(_centroids)
-    )
+    _distance_matrix = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(_centroids))
 
     atlas = Atlas.create("DiFuMo256dimensions", path)
     centroids = atlas.get_centroids()

@@ -4,9 +4,7 @@ from numba import guvectorize
 from numpy import typing as npt
 
 
-def correlation_p_value(
-    r: npt.NDArray[np.float64], m: int
-) -> npt.NDArray[np.float64]:
+def correlation_p_value(r: npt.NDArray[np.float64], m: int) -> npt.NDArray[np.float64]:
     ab = m / 2 - 1
     distribution = scipy.stats.beta(ab, ab, loc=-1, scale=2)
     pvalue = 2 * (distribution.sf(np.abs(r)))

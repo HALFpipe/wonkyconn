@@ -11,9 +11,7 @@ from .workflow import workflow, gc_log
 def global_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
-        description=(
-            "Evaluating the residual motion in fMRI connectome and visualize reports"
-        ),
+        description=("Evaluating the residual motion in fMRI connectome and visualize reports"),
     )
 
     # BIDS app required arguments
@@ -21,8 +19,7 @@ def global_parser() -> argparse.ArgumentParser:
         "bids_dir",
         action="store",
         type=Path,
-        help="The directory with the input dataset (e.g. fMRIPrep derivative)"
-        "formatted according to the BIDS standard.",
+        help="The directory with the input dataset (e.g. fMRIPrep derivative)" "formatted according to the BIDS standard.",
     )
     parser.add_argument(
         "output_dir",
@@ -32,8 +29,7 @@ def global_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "analysis_level",
-        help="Level of the analysis that will be performed. Only group"
-        "level is available.",
+        help="Level of the analysis that will be performed. Only group" "level is available.",
         choices=["group"],
     )
 
@@ -60,9 +56,7 @@ def global_parser() -> argparse.ArgumentParser:
         help="Specify the atlas file to use for a segmentation label in the data",
     )
 
-    parser.add_argument(
-        "-v", "--version", action="version", version=__version__
-    )
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
         "--verbosity",
@@ -93,7 +87,4 @@ def main(argv: None | Sequence[str] = None) -> None:
 
 
 if __name__ == "__main__":
-    raise RuntimeError(
-        "run.py should not be run directly;\n"
-        "Please `pip install` and use the `giga_connectome` command"
-    )
+    raise RuntimeError("run.py should not be run directly;\n" "Please `pip install` and use the `giga_connectome` command")

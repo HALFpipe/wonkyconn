@@ -29,20 +29,13 @@ def calculate_degrees_of_freedom_loss(
 
     """
     # seann: ensure count is a list of integers instead of a numpy array
-    count: list[int] = [
-        connectivity_matrix.load().shape[0]
-        for connectivity_matrix in connectivity_matrices
-    ]
+    count: list[int] = [connectivity_matrix.load().shape[0] for connectivity_matrix in connectivity_matrices]
 
     calculate = partial(_calculate_for_key, connectivity_matrices, count)
     return DegreesOfFreedomLossResult(
         confound_regression_percentage=calculate("ConfoundRegressors"),
-        motion_scrubbing_percentage=calculate(
-            "NumberOfVolumesDiscardedByMotionScrubbing"
-        ),
-        nonsteady_states_detector_percentage=calculate(
-            "NumberOfVolumesDiscardedByNonsteadyStatesDetector"
-        ),
+        motion_scrubbing_percentage=calculate("NumberOfVolumesDiscardedByMotionScrubbing"),
+        nonsteady_states_detector_percentage=calculate("NumberOfVolumesDiscardedByNonsteadyStatesDetector"),
     )
 
 
@@ -52,10 +45,7 @@ def _calculate_for_key(
     count: Sequence[int],
     key: str,
 ) -> float:
-    values: Sequence[int | list[str] | None] = [
-        connectivity_matrix.metadata.get(key, None)
-        for connectivity_matrix in connectivity_matrices
-    ]
+    values: Sequence[int | list[str] | None] = [connectivity_matrix.metadata.get(key, None) for connectivity_matrix in connectivity_matrices]
 
     if all(value is None for value in values):
         return np.nan

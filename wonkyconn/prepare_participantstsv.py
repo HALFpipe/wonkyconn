@@ -3,15 +3,11 @@ import logging
 from pathlib import Path
 
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 # seann: changed type so it expicity allow None
-def prepare_participants_file(
-    tsv_path: str | Path, output_path: str | Path | None = None
-) -> pd.DataFrame:
+def prepare_participants_file(tsv_path: str | Path, output_path: str | Path | None = None) -> pd.DataFrame:
     """
     Prepare participants.tsv file for WONKYCONN analysis:
     1. Validates required columns exist
@@ -49,9 +45,7 @@ def prepare_participants_file(
     # Clean participant IDs
     if not df["participant_id"].str.startswith("sub-").all():
         logging.info("Adding 'sub-' prefix to participant IDs")
-        df["participant_id"] = df["participant_id"].apply(
-            lambda x: f"sub-{x}" if not str(x).startswith("sub-") else x
-        )
+        df["participant_id"] = df["participant_id"].apply(lambda x: f"sub-{x}" if not str(x).startswith("sub-") else x)
 
     # Convert gender to numeric (M=0, F=1)
     df = df.copy()  # Make copy to avoid modifying view
@@ -82,15 +76,9 @@ def prepare_participants_file(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Prepare participants.tsv file for WONKYCONN"
-    )
-    parser.add_argument(
-        "input_tsv", help="Path to input participants.tsv file"
-    )
-    parser.add_argument(
-        "--output", help="Path to save cleaned file (optional)"
-    )
+    parser = argparse.ArgumentParser(description="Prepare participants.tsv file for WONKYCONN")
+    parser.add_argument("input_tsv", help="Path to input participants.tsv file")
+    parser.add_argument("--output", help="Path to save cleaned file (optional)")
     args = parser.parse_args()
 
     prepare_participants_file(args.input_tsv, args.output)

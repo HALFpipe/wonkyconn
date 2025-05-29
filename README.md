@@ -1,3 +1,5 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/SIMEXP/wonkyconn/main.svg)](https://results.pre-commit.ci/latest/github/SIMEXP/wonkyconn/main)
+
 # wonkyconn
 
 Evaluating the residual motion in fMRI connectome and visualise reports

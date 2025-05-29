@@ -67,7 +67,7 @@ exclude = [".github", "wonkyconn/data/test_data"]
 [tool.black]
 target-version = ["py311"]
 exclude = "wonkyconn/_version.py"
-line-length = 79
+line-length = 151
 
 [tool.mypy]
 check_untyped_defs = true

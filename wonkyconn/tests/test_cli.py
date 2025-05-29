@@ -35,10 +35,7 @@ def test_help(capsys):
     except SystemExit:
         pass
     captured = capsys.readouterr()
-    assert (
-        "Evaluating the residual motion in fMRI connectome and visualize reports"
-        in captured.out
-    )
+    assert "Evaluating the residual motion in fMRI connectome and visualize reports" in captured.out
 
 
 def _copy_file(path: Path, new_path: Path, sub: str) -> None:
@@ -49,9 +46,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         relmat = pd.read_csv(path, sep="\t")
         (n,) = set(relmat.shape)
 
-        array = scipy.spatial.distance.squareform(
-            relmat.to_numpy() - np.eye(n)
-        )
+        array = scipy.spatial.distance.squareform(relmat.to_numpy() - np.eye(n))
         np.random.shuffle(array)
 
         new_array = scipy.spatial.distance.squareform(array) + np.eye(n)
@@ -71,11 +66,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 # hi test
 @pytest.mark.smoke
 def test_smoke(tmp_path: Path):
-    data_path = Path(
-        resource_filename(
-            "wonkyconn", "data/test_data/connectome_Schaefer2018"
-        )
-    )
+    data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer2018"))
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
@@ -105,13 +96,7 @@ def test_smoke(tmp_path: Path):
     for n in [100, 200, 300, 400, 500, 600, 800]:
         seg_to_atlas_args.append("--seg-to-atlas")
         seg_to_atlas_args.append(f"Schaefer20187Networks{n}Parcels")
-        dseg_path = (
-            data_path
-            / "atlases"
-            / "sub-1"
-            / "func"
-            / f"sub-1_seg-Schaefer20187Networks{n}Parcels_dseg.nii.gz"
-        )
+        dseg_path = data_path / "atlases" / "sub-1" / "func" / f"sub-1_seg-Schaefer20187Networks{n}Parcels_dseg.nii.gz"
         seg_to_atlas_args.append(str(dseg_path))
 
     parser = global_parser()

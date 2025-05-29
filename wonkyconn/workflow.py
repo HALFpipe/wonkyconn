@@ -43,10 +43,7 @@ def workflow(args: argparse.Namespace) -> None:
     data_frame = load_data_frame(args)
 
     # Load atlases
-    seg_to_atlas: dict[str, Atlas] = {
-        seg: Atlas.create(seg, Path(atlas_path_str))
-        for seg, atlas_path_str in args.seg_to_atlas
-    }
+    seg_to_atlas: dict[str, Atlas] = {seg: Atlas.create(seg, Path(atlas_path_str)) for seg, atlas_path_str in args.seg_to_atlas}
 
     # Seann: Get the specified atlas passed to CLI
     specified_atlas = list(seg_to_atlas.keys())[0]
@@ -55,9 +52,7 @@ def workflow(args: argparse.Namespace) -> None:
     # Seann: changed from using namedtuple to a dict to avoid type error
     group_by = args.group_by
 
-    grouped_connectivity_matrix: defaultdict[
-        tuple[str, ...], list[ConnectivityMatrix]
-    ] = defaultdict(list)
+    grouped_connectivity_matrix: defaultdict[tuple[str, ...], list[ConnectivityMatrix]] = defaultdict(list)
 
     for timeseries_path in index.get(suffix="timeseries", extension=".tsv"):
         query = dict(**index.get_tags(timeseries_path))
@@ -65,9 +60,7 @@ def workflow(args: argparse.Namespace) -> None:
 
         metadata = index.get_metadata(timeseries_path)
         if not metadata:
-            gc_log.warning(
-                f"Skipping {timeseries_path} due to missing metadata"
-            )
+            gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
             continue
 
         # Seann: Filter connectivity matrices by atlas type
@@ -79,10 +72,7 @@ def workflow(args: argparse.Namespace) -> None:
                 continue
 
             # changed from Group to tuple to avoid type error
-            group = tuple(
-                index.get_tag_value(relmat_path, key) or "NA"
-                for key in group_by
-            )
+            group = tuple(index.get_tag_value(relmat_path, key) or "NA" for key in group_by)
 
             connectivity_matrix = ConnectivityMatrix(relmat_path, metadata)
             grouped_connectivity_matrix[group].append(connectivity_matrix)
@@ -91,12 +81,8 @@ def workflow(args: argparse.Namespace) -> None:
         raise ValueError("No groups found")
 
     records: list[dict[str, Any]] = []
-    for group, connectivity_matrices in tqdm(
-        grouped_connectivity_matrix.items(), unit="groups"
-    ):
-        record = make_record(
-            index, data_frame, seg_to_atlas, connectivity_matrices
-        )
+    for group, connectivity_matrices in tqdm(grouped_connectivity_matrix.items(), unit="groups"):
+        record = make_record(index, data_frame, seg_to_atlas, connectivity_matrices)
         record.update(dict(zip(group_by, group)))
         records.append(record)
 
@@ -117,17 +103,12 @@ def make_record(
     gc_log.info(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
 
     # seann: added sub- tag when looking up subjects
-    seg_subjects = [
-        f"sub-{index.get_tag_value(c.path, 'sub')}"
-        for c in connectivity_matrices
-    ]
+    seg_subjects = [f"sub-{index.get_tag_value(c.path, 'sub')}" for c in connectivity_matrices]
 
     seg_data_frame = data_frame.loc[seg_subjects]
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices)
 
-    (seg,) = index.get_tag_values(
-        "seg", {c.path for c in connectivity_matrices}
-    )
+    (seg,) = index.get_tag_values("seg", {c.path for c in connectivity_matrices})
     atlas = seg_to_atlas[seg]
 
     record = dict(
