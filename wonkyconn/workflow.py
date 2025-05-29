@@ -102,8 +102,13 @@ def make_record(
     # seann: Add debugging to see what the atlas dictionary contains
     gc_log.info(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
 
-    # seann: added sub- tag when looking up subjects
-    seg_subjects = [f"sub-{index.get_tag_value(c.path, 'sub')}" for c in connectivity_matrices]
+    # seann: added sub- tag when looking up subjects only if sub- is not already present
+    seg_subjects = []
+    for c in connectivity_matrices:
+        sub = index.get_tag_value(c.path, "sub")  # returns either "2" or "sub-2"
+        if not str(sub).startswith("sub-"):
+            sub = f"sub-{sub}"
+        seg_subjects.append(sub)
 
     seg_data_frame = data_frame.loc[seg_subjects]
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices)

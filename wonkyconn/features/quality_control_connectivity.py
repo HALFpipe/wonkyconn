@@ -1,3 +1,5 @@
+from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
+
 from itertools import chain
 from typing import Iterable
 

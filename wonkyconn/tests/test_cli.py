@@ -66,14 +66,14 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 # hi test
 @pytest.mark.smoke
 def test_smoke(tmp_path: Path):
-    data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer2018"))
+    data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer20187Networks_dev"))
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    subjects = ["2", "3", "4", "5", "6", "7"]
+    subjects = [f"sub-{i}" for i in ["2", "3", "4", "5", "6", "7"]]
 
     paths = list(data_path.glob("**/*"))
     for path in tqdm(paths, desc="Generating test data"):

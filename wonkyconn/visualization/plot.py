@@ -1,3 +1,4 @@
+from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
 from functools import partial
 from pathlib import Path
 import matplotlib
@@ -6,6 +7,7 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+
 
 sns.set_palette("colorblind")
 palette = sns.color_palette(n_colors=6)

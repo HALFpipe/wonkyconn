@@ -121,7 +121,7 @@ jobs:
     - name: Install archive
       if: matrix.package == 'archive'
       env:
-        # Either of these works; use both if you still have setuptools-scm as a fallback
+        # seann: added temp fallback version to avoid VCS errors for archive installs
         HATCH_VCS_FALLBACK_VERSION: 0.0.0+ci
         SETUPTOOLS_SCM_PRETEND_VERSION: 0.0.0+ci
       run: pip install archive/archive.tgz
