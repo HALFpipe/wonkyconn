@@ -2,7 +2,7 @@
 
 ## Setting up your environment for development
 
-1. Fork the repository from github and clone your fork locally
+1. Fork the repository from github and clone your fork locally (see [here](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) to setup your ssh key):
 
 ```bash
 git clone git@github.com:<your_username>/wonkyconn.git
@@ -21,18 +21,18 @@ source wonkyconn/bin/activate
 pip install -e .[dev]
 ```
 
-4. Install pre-commit hooks to run all the checks before each commit.
-
-```bash
-pre-commit install
-```
-
-5. Install the data required for testing from zenodo
+4. Install the data required for testing from zenodo
 
 This can be done using tox by running:
 
 ```bash
 tox -e test_data
+```
+
+5. Install pre-commit hooks to run all the checks before each commit.
+
+```bash
+pre-commit install
 ```
 
 ## Contributing to code
@@ -127,16 +127,15 @@ tox -e test_data
 ```
 
 ```bash
-wonkyconn \
-    --atlas Schaefer20187Networks \
-    --denoise-strategy simple \
-    --standardize zscore \
-    --bids-filter wonkyconn/data/test_data/bids_filter.json  \
-    --reindex-bids \
-    --calculate-intranetwork-average-correlation \
-    wonkyconn/data/test_data/ds000017-fmriprep22.0.1-downsampled-nosurface \
-    wonkyconn/data/test_data/output \
-    participant
+INPUT=wonkyconn/data/test_data/connectome_Schaefer2018
+OUTPUT=wonkyconn/data/test_data/test_output
+ATLAS_PATH=wonkyconn/data/test_data/connectome_Schaefer2018/atlases/sub-1/func/sub-1_seg-Schaefer2018400Parcels7Networks_dseg.nii.gz
+PHENOTYPE=wonkyconn/data/test_data/connectome_Schaefer2018/participants.tsv
+wonkyconn ${INPUT} ${OUTPUT} group \
+    --phenotypes ${PHENOTYPE} \
+    --seg-to-atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
+    --group-by seg desc \
+    --verbosity 2
 ```
 
 ## Prepare a release

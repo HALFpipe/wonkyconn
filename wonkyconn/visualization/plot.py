@@ -16,7 +16,7 @@ matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
 
 # seann: added type for series
-def _make_group_label(group_by: list[str], values: pd.Series[str]) -> str:
+def _make_group_label(group_by: list[str], values: "pd.Series[str]") -> str:
     label: str = ""
     for a, b in zip(group_by, values, strict=True):
         if label:
@@ -41,7 +41,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         None
     """
     # seann: added type for series
-    group_labels: pd.Series[str] = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
+    group_labels: "pd.Series[str]" = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
     data_frame = result_frame.reset_index()
 
     figure, axes_array = plt.subplots(nrows=1, ncols=5, figsize=(22, 4), constrained_layout=True, sharey=True)
@@ -89,7 +89,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
 
 def plot_degrees_of_freedom_loss(
     result_frame: pd.DataFrame,
-    group_labels: pd.Series[str],
+    group_labels: "pd.Series[str]",
     degrees_of_freedom_loss_axes: Axes,
     legend_axes: Axes,
 ) -> None:

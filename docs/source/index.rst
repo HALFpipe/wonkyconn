@@ -21,6 +21,7 @@ Boom
    :maxdepth: 1
    :caption: Contribution and maintenance
 
+   seann_workflow_notes.md
    contributing.md
    api.rst
    changes.md

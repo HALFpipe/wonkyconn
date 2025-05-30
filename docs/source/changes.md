@@ -1,6 +1,6 @@
 # What’s new
 
-## 0.0.1.dev
+## 0.1.0.dev
 
 **Released MONTH YEAR**
 

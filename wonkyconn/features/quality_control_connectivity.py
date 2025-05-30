@@ -70,13 +70,13 @@ def calculate_qcfc(
 
 
 # seann: added type for series
-def calculate_median_absolute(x: pd.Series[float]) -> float:
+def calculate_median_absolute(x: "pd.Series[float]") -> float:
     """Calculate Absolute median value"""
     return x.abs().median()
 
 
 # seann: added type for series
-def significant_level(x: pd.Series[float], alpha: float = 0.05, correction: str | None = None) -> npt.NDArray[np.bool_]:
+def significant_level(x: "pd.Series[float]", alpha: float = 0.05, correction: str | None = None) -> npt.NDArray[np.bool_]:
     """
     Apply FDR correction to a pandas.Series p-value object.
 

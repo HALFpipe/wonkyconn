@@ -1,4 +1,4 @@
-# WONKYCONN Workflow Documentation
+# Workflow Documentation for development
 
 This document outlines how to run the WONKYCONN codebase for analyzing fMRI connectivity matrices.
 
@@ -94,7 +94,7 @@ Common issues:
 
 ## BUGs during running
 
-# statsmodels not found
+### statsmodels not found
 Traceback (most recent call last):
   File "/lustre07/scratch/seann/wonkyconn/wonkyconnenv/bin/wonkyconn", line 5, in <module>
     from wonkyconn.run import main
@@ -107,19 +107,18 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'statsmodels'
 - Fix: added 'statsmodels' to pyproject.toml
 
-# patricipants.tsv needs to be properly formatted
+### patricipants.tsv needs to be properly formatted
 - see prepare_participantstsv.py for quick conversion script.
 - note: participants.tsv files can vary widely and prepare_participantstsv.py cannot handle all cases. Please visually inspect the participants.tsv and change it if needed to the formatting described above in Data Preparation.
 
-# code does not grab subjects from participants tsv with 'sub-' tag
+### code does not grab subjects from participants tsv with 'sub-' tag
 - Fix: see changes to make_record in workflow.py
 
-# code does not grab matrices corresponding to the specific atlas passed to the CLI
+### code does not grab matrices corresponding to the specific atlas passed to the CLI
 - Fix: see modifications to workflow.py, filtering connectivity matrix loaded from input path for only the specified atlas. all other relmat files from other atlas are not loaded.
 
 
-
-# Pre-commit version issue with compute canada
+### Pre-commit version issue with compute canada
 - Currently we use pre-commit version: 4.2.0+computecanada
 - This breaks because of the +computecanada tag. ValueError: invalid literal for int() with base 10: '0+computecanada'
 
