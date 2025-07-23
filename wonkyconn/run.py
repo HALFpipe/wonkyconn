@@ -46,6 +46,7 @@ def global_parser() -> argparse.ArgumentParser:
         help="Path to the phenotype file that has the columns `participant_id`, `gender` coded as `M` and `F` and `age` in years.",
         required=True,
     )
+    #Fix: --atlas argument only accepts one atlas at a time, replaces --seg-by-atlas
     parser.add_argument(
         "--atlas",
         type=str,

@@ -65,6 +65,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 
 # hi test
 @pytest.mark.smoke
+# Fix --atlas: parametrize to test different atlas sizes instead of looping through a list
 @pytest.mark.parametrize("n", [100, 200, 300, 400, 500, 600, 800])
 def test_smoke(tmp_path: Path, n):
     data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer20187Networks_dev"))
@@ -96,6 +97,7 @@ def test_smoke(tmp_path: Path, n):
     phenotypes.to_csv(phenotypes_path, sep="\t", index=False)
 
     parser = global_parser()
+    #Fix --atlas: changed to use new --atlas argument
     argv = [
         "--phenotypes",
         str(phenotypes_path),

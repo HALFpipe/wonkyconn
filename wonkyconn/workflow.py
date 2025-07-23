@@ -42,13 +42,13 @@ def workflow(args: argparse.Namespace) -> None:
     # Load data frame
     data_frame = load_data_frame(args)
 
-    # Load atlases (only 1 atlas is supported for now)
+    # Fix --atlas: Load atlas (only 1 atlas is supported for now)
     label, atlas_path_str = args.atlas
     seg_to_atlas: dict[str, Atlas] = {label: Atlas.create(label, Path(atlas_path_str))}
     specified_atlas = label
     gc_log.info(f"Will only process matrices for atlas: {specified_atlas}")
 
-    # Seann: changed from using namedtuple to a dict to avoid type error
+    # Fix: changed from using namedtuple to a dict to avoid type error
     group_by = args.group_by
 
     grouped_connectivity_matrix: defaultdict[tuple[str, ...], list[ConnectivityMatrix]] = defaultdict(list)
