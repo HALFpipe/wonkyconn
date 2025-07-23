@@ -97,9 +97,14 @@ def test_smoke(tmp_path: Path, n):
 
     parser = global_parser()
     argv = [
-        "--phenotypes", str(phenotypes_path),
-        "--group-by", "seg", "desc",
-        "--atlas", atlas_label, str(dseg_path),
+        "--phenotypes",
+        str(phenotypes_path),
+        "--group-by",
+        "seg",
+        "desc",
+        "--atlas",
+        atlas_label,
+        str(dseg_path),
         str(bids_dir),
         str(output_dir),
         "group",
