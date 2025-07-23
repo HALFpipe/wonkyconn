@@ -97,7 +97,7 @@ def test_smoke(tmp_path: Path, n):
     phenotypes.to_csv(phenotypes_path, sep="\t", index=False)
 
     parser = global_parser()
-    #Fix --atlas: changed to use new --atlas argument
+    # Fix --atlas: changed to use new --atlas argument
     argv = [
         "--phenotypes",
         str(phenotypes_path),
