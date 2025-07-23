@@ -65,8 +65,11 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 
 # hi test
 @pytest.mark.smoke
-def test_smoke(tmp_path: Path):
+@pytest.mark.parametrize("n", [100, 200, 300, 400, 500, 600, 800])
+def test_smoke(tmp_path: Path, n):
     data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer20187Networks_dev"))
+    atlas_label = f"Schaefer20187Networks{n}Parcels"
+    dseg_path = data_path / "atlases" / "sub-1" / "func" / f"sub-1_seg-{atlas_label}_dseg.nii.gz"
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
@@ -92,27 +95,17 @@ def test_smoke(tmp_path: Path):
     phenotypes_path = bids_dir / "participants.tsv"
     phenotypes.to_csv(phenotypes_path, sep="\t", index=False)
 
-    seg_to_atlas_args: list[str] = []
-    for n in [100, 200, 300, 400, 500, 600, 800]:
-        seg_to_atlas_args.append("--seg-to-atlas")
-        seg_to_atlas_args.append(f"Schaefer20187Networks{n}Parcels")
-        dseg_path = data_path / "atlases" / "sub-1" / "func" / f"sub-1_seg-Schaefer20187Networks{n}Parcels_dseg.nii.gz"
-        seg_to_atlas_args.append(str(dseg_path))
-
     parser = global_parser()
     argv = [
-        "--phenotypes",
-        str(phenotypes_path),
-        "--group-by",
-        "seg",
-        "desc",
-        *seg_to_atlas_args,
+        "--phenotypes", str(phenotypes_path),
+        "--group-by", "seg", "desc",
+        "--atlas", atlas_label, str(dseg_path),
         str(bids_dir),
         str(output_dir),
         "group",
     ]
-    args = parser.parse_args(argv)
 
+    args = parser.parse_args(argv)
     workflow(args)
 
     assert (output_dir / "metrics.tsv").is_file()
