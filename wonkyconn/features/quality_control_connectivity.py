@@ -58,10 +58,8 @@ def calculate_qcfc(
         axis=1,
     )
 
-    _, m = connectivity_array.shape
-    correlation = partial_correlation(connectivity_array, metrics, covariates)
-
-    p_value = correlation_p_value(correlation, m)
+    correlation, count = partial_correlation(connectivity_array, metrics, covariates)
+    p_value = correlation_p_value(correlation, count)
 
     qcfc = pd.DataFrame(dict(i=i, j=j, correlation=correlation, p_value=p_value))
     qcfc = qcfc.set_index(["i", "j"])
