@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pkg_resources import resource_filename
 import scipy
 from nilearn.plotting import find_probabilistic_atlas_cut_coords
 from templateflow.api import get as get_template
