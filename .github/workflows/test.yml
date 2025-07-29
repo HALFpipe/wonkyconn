@@ -60,6 +60,10 @@ jobs:
       id: download
       run: tox -e test_data
 
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+    name: Download h2bids denoise metadata test data
+    run: tox -e test_data_h2bids_denoise_metadata
+
   build:
     runs-on: ubuntu-latest
     steps:
