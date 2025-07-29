@@ -62,7 +62,7 @@ jobs:
 
     - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
       name: Download h2bids denoise metadata test data
-      id: download h2bids denoise metatada
+      id: download_h2bids
       run: tox -e test_data_h2bids_denoise_metadata
 
   build:
