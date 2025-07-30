@@ -3,11 +3,13 @@ Process fMRIPrep outputs to timeseries based on denoising strategy.
 """
 
 import argparse
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from tqdm.auto import tqdm
 
 from .atlas import Atlas
@@ -28,7 +30,7 @@ from .visualization.plot import plot
 
 def workflow(args: argparse.Namespace) -> None:
     set_verbosity(args.verbosity)
-    gc_log.info(vars(args))
+    gc_log.debug(vars(args))
 
     # Check BIDS path
     bids_dir = args.bids_dir
@@ -43,17 +45,21 @@ def workflow(args: argparse.Namespace) -> None:
     data_frame = load_data_frame(args)
 
     # Load atlases
-    seg_to_atlas: dict[str, Atlas] = {seg: Atlas.create(seg, Path(atlas_path_str)) for seg, atlas_path_str in args.seg_to_atlas}
+    seg_to_atlas: dict[str, Atlas] = {
+        seg: Atlas.create(seg, Path(atlas_path_str))
+        for seg, atlas_path_str in args.seg_to_atlas
+    }
+    # seann: Add debugging to see what the atlas dictionary contains
+    gc_log.debug(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
 
-    # Seann: Get the specified atlas passed to CLI
-    specified_atlas = list(seg_to_atlas.keys())[0]
-    gc_log.info(f"Will only process matrices for atlas: {specified_atlas}")
+    group_by: list[str] = args.group_by
+    Group = namedtuple("Group", group_by)  # type: ignore[misc]
 
-    # Seann: changed from using namedtuple to a dict to avoid type error
-    group_by = args.group_by
+    grouped_connectivity_matrix: defaultdict[
+        tuple[str, ...], list[ConnectivityMatrix]
+    ] = defaultdict(list)
 
-    grouped_connectivity_matrix: defaultdict[tuple[str, ...], list[ConnectivityMatrix]] = defaultdict(list)
-
+    segs: set[str] = set()
     for timeseries_path in index.get(suffix="timeseries", extension=".tsv"):
         query = dict(**index.get_tags(timeseries_path))
         del query["suffix"]
@@ -63,27 +69,33 @@ def workflow(args: argparse.Namespace) -> None:
             gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
             continue
 
-        # Seann: Filter connectivity matrices by atlas type
-        for relmat_path in index.get(suffix="relmat", **query):
-            # Filter matrices by atlas type
-            matrix_seg = index.get_tag_value(relmat_path, "seg")
-            if matrix_seg != specified_atlas:
-                gc_log.debug(f"Skipping matrix with atlas {matrix_seg}")
-                continue
-
-            # changed from Group to tuple to avoid type error
-            group = tuple(index.get_tag_value(relmat_path, key) or "NA" for key in group_by)
-
+        relmat_query = query | dict(desc="correlation", suffix="matrix")
+        for relmat_path in index.get(**relmat_query):
+            group = Group(*(index.get_tag_value(relmat_path, key) for key in group_by))
             connectivity_matrix = ConnectivityMatrix(relmat_path, metadata)
             grouped_connectivity_matrix[group].append(connectivity_matrix)
+            seg = index.get_tag_value(relmat_path, args.seg_key)
+            if seg is None:
+                raise ValueError(
+                    f'Connectivity matrix "{relmat_path}" does not have key "{args.seg_key}"'
+                )
+            segs.add(seg)
 
     if not grouped_connectivity_matrix:
         raise ValueError("No groups found")
 
-    records: list[dict[str, Any]] = []
-    for group, connectivity_matrices in tqdm(grouped_connectivity_matrix.items(), unit="groups"):
-        record = make_record(index, data_frame, seg_to_atlas, connectivity_matrices)
-        record.update(dict(zip(group_by, group)))
+    distance_matrices: dict[str, npt.NDArray[np.float64]] = {
+        seg: seg_to_atlas[seg].get_distance_matrix() for seg in segs
+    }
+
+    records: list[dict[str, Any]] = list()
+    for key, connectivity_matrices in tqdm(
+        grouped_connectivity_matrix.items(), unit="groups"
+    ):
+        record = make_record(
+            index, data_frame, connectivity_matrices, distance_matrices, args
+        )
+        record.update(dict(zip(group_by, key)))
         records.append(record)
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
@@ -95,31 +107,41 @@ def workflow(args: argparse.Namespace) -> None:
 def make_record(
     index: BIDSIndex,
     data_frame: pd.DataFrame,
-    seg_to_atlas: dict[str, Atlas],
     connectivity_matrices: list[ConnectivityMatrix],
+    distance_matrices: dict[str, npt.NDArray[np.float64]],
+    args: argparse.Namespace,
 ) -> dict[str, Any]:
-
-    # seann: Add debugging to see what the atlas dictionary contains
-    gc_log.info(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
-
     # seann: added sub- tag when looking up subjects only if sub- is not already present
-    seg_subjects = []
+    seg_subjects: list[str] = list()
     for c in connectivity_matrices:
-        sub = index.get_tag_value(c.path, "sub")  # returns either "2" or "sub-2"
-        if not str(sub).startswith("sub-"):
-            sub = f"sub-{sub}"
-        seg_subjects.append(sub)
+        sub = index.get_tag_value(c.path, "sub")
 
-    seg_data_frame = data_frame.loc[seg_subjects]
-    qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices)
+        if sub is None:
+            raise ValueError(
+                f'Connectivity matrix "{c.path}" does not have a subject tag'
+            )
 
-    (seg,) = index.get_tag_values("seg", {c.path for c in connectivity_matrices})
-    atlas = seg_to_atlas[seg]
+        if sub in data_frame.index:
+            seg_subjects.append(sub)
+            continue
+
+        sub = f"sub-{sub}"
+        if sub in data_frame.index:
+            seg_subjects.append(sub)
+            continue
+
+        raise ValueError(f"Subject {sub} not found in participants file")
+
+    seg_data_frame = data_frame.loc[seg_subjects]  # type: ignore[index]
+    qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices, args.metric_key)
+
+    (seg,) = index.get_tag_values(args.seg_key, {c.path for c in connectivity_matrices})
+    distance_matrix = distance_matrices[seg]
 
     record = dict(
         median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
-        distance_dependence=calculate_distance_dependence(qcfc, atlas),
+        distance_dependence=calculate_distance_dependence(qcfc, distance_matrix),
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
 

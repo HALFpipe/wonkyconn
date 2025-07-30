@@ -27,7 +27,7 @@ class ConnectivityMatrix:
         Returns:
             ndarray: The loaded connectivity matrix as a NumPy array.
         """
-        return np.loadtxt(self.path, delimiter="\t", skiprows=1)
+        return np.loadtxt(self.path, delimiter="\t", skiprows=0)
 
     @cached_property
     def region_count(self) -> int:

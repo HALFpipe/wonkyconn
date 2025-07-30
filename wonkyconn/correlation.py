@@ -41,6 +41,12 @@ def partial_correlation(
 
     # Remove rows with NaN values
     mask = np.array([np.all(np.isfinite(row)) for row in np.column_stack((x, y, cov))])
+
+    if not mask.any():
+        r[0] = np.nan
+        count[0] = 0
+        return
+
     x = x[mask]
     y = y[mask]
     cov = cov[mask]

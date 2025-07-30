@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 from typing import Sequence
 
 from . import __version__
@@ -11,7 +12,9 @@ from .workflow import workflow, gc_log
 def global_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
-        description=("Evaluating the residual motion in fMRI connectome and visualize reports"),
+        description=(
+            "Evaluating the residual motion in fMRI connectome and visualize reports"
+        ),
     )
 
     # BIDS app required arguments
@@ -19,17 +22,19 @@ def global_parser() -> argparse.ArgumentParser:
         "bids_dir",
         action="store",
         type=Path,
-        help="The directory with the input dataset (e.g. fMRIPrep derivative)" "formatted according to the BIDS standard.",
+        help="The directory with the input dataset (e.g. fMRIPrep derivative)"
+        "formatted according to the BIDS standard",
     )
     parser.add_argument(
         "output_dir",
         action="store",
         type=Path,
-        help="The directory where the output files should be stored.",
+        help="The directory where the output files should be stored",
     )
     parser.add_argument(
         "analysis_level",
-        help="Level of the analysis that will be performed. Only group" "level is available.",
+        help="Level of the analysis that will be performed. Only group"
+        "level is available",
         choices=["group"],
     )
 
@@ -38,13 +43,19 @@ def global_parser() -> argparse.ArgumentParser:
         type=str,
         nargs="+",
         default=["seg"],
-        help="Select which tags to group the connectivity matrices by. Default is `seg`.",
+        help="Select which tags to group the connectivity matrices by. Default is `seg`",
     )
     parser.add_argument(
         "--phenotypes",
         type=str,
-        help="Path to the phenotype file that has the columns `participant_id`, `gender` coded as `M` and `F` and `age` in years.",
+        help="Path to the phenotype file that has the columns `participant_id`, `gender` coded as `M` and `F` and `age` in years",
         required=True,
+    )
+    parser.add_argument(
+        "--seg-key",
+        type=str,
+        help="Tag used to identify which segmentation was used to create each input. Default is `seg` as per BEP017",
+        default="seg",
     )
     parser.add_argument(
         "--seg-to-atlas",
@@ -54,6 +65,12 @@ def global_parser() -> argparse.ArgumentParser:
         metavar=("SEG", "ATLAS"),
         default=list(),
         help="Specify the atlas file to use for a segmentation label in the data",
+    )
+    parser.add_argument(
+        "--metric-key",
+        type=str,
+        help="Which metadata key is used to inform QC-FC calculation",
+        default="MeanFramewiseDisplacement",
     )
 
     parser.add_argument("-v", "--version", action="version", version=__version__)
@@ -87,4 +104,4 @@ def main(argv: None | Sequence[str] = None) -> None:
 
 
 if __name__ == "__main__":
-    raise RuntimeError("run.py should not be run directly;\n" "Please `pip install` and use the `giga_connectome` command")
+    main(sys.argv[1:])
