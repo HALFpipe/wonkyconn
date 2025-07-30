@@ -46,14 +46,14 @@ def global_parser() -> argparse.ArgumentParser:
         help="Path to the phenotype file that has the columns `participant_id`, `gender` coded as `M` and `F` and `age` in years.",
         required=True,
     )
+    # Fix: --atlas argument only accepts one atlas at a time, replaces --seg-by-atlas
     parser.add_argument(
-        "--seg-to-atlas",
+        "--atlas",
         type=str,
         nargs=2,
-        action="append",
-        metavar=("SEG", "ATLAS"),
-        default=list(),
-        help="Specify the atlas file to use for a segmentation label in the data",
+        metavar=("LABEL", "ATLAS_PATH"),
+        required=True,
+        help="Specify the atlas label and the path to the atlas file (e.g. --atlas Schaefer2018 /path/to/atlas.nii.gz)",
     )
 
     parser.add_argument("-v", "--version", action="version", version=__version__)

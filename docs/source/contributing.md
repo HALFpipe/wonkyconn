@@ -133,7 +133,7 @@ ATLAS_PATH=wonkyconn/data/test_data/connectome_Schaefer2018/atlases/sub-1/func/s
 PHENOTYPE=wonkyconn/data/test_data/connectome_Schaefer2018/participants.tsv
 wonkyconn ${INPUT} ${OUTPUT} group \
     --phenotypes ${PHENOTYPE} \
-    --seg-to-atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
+    --atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
     --group-by seg desc \
     --verbosity 2
 ```
