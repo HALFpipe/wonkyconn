@@ -29,40 +29,65 @@ def calculate_degrees_of_freedom_loss(
 
     """
     # seann: ensure count is a list of integers instead of a numpy array
-    count: list[int] = [connectivity_matrix.load().shape[0] for connectivity_matrix in connectivity_matrices]
+    count: list[int] = [
+        connectivity_matrix.metadata["NumberOfVolumes"]
+        for connectivity_matrix in connectivity_matrices
+    ]
 
     calculate = partial(_calculate_for_key, connectivity_matrices, count)
     return DegreesOfFreedomLossResult(
-        confound_regression_percentage=calculate("ConfoundRegressors"),
-        motion_scrubbing_percentage=calculate("NumberOfVolumesDiscardedByMotionScrubbing"),
-        nonsteady_states_detector_percentage=calculate("NumberOfVolumesDiscardedByNonsteadyStatesDetector"),
+        confound_regression_percentage=calculate({"ConfoundRegressors"}),
+        motion_scrubbing_percentage=calculate(
+            {"NumberOfVolumesDiscardedByMotionScrubbing"}
+        ),
+        nonsteady_states_detector_percentage=calculate(
+            {"NumberOfVolumesDiscardedByNonsteadyStatesDetector", "DummyScans"}
+        ),
     )
+
+
+def _get_values(
+    connectivity_matrix: ConnectivityMatrix, keys: set[str]
+) -> float | Sequence[str] | None:
+    metadata = connectivity_matrix.metadata
+    values: set[float | tuple[str, ...]] = set()
+    for key in keys:
+        if key not in metadata:
+            continue
+        value = metadata[key]
+        if isinstance(value, (int, float)):
+            values.add(float(value))
+        elif isinstance(value, Sequence):
+            values.add(tuple(value))
+    if len(values) == 0:
+        return None
+    if len(values) > 1:
+        raise ValueError(f"Multiple values found for keys {keys} in metadata: {values}")
+    return next(iter(values))
 
 
 # seann: ensure function accepts sequence of integers
 def _calculate_for_key(
     connectivity_matrices: list[ConnectivityMatrix],
     count: Sequence[int],
-    key: str,
+    keys: set[str],
 ) -> float:
-    values: Sequence[int | list[str] | None] = [connectivity_matrix.metadata.get(key, None) for connectivity_matrix in connectivity_matrices]
+    values: Sequence[float | Sequence[str] | None] = [
+        _get_values(connectivity_matrix, keys)
+        for connectivity_matrix in connectivity_matrices
+    ]
 
     if all(value is None for value in values):
         return np.nan
 
     proportions: list[float] = []
-    if key.startswith("NumberOf"):
-        for value, c in zip(values, count, strict=True):
-            if isinstance(value, int):
-                proportions.append(value / c)
-            else:
-                raise ValueError(f"Unexpected value for `{key}`: {value}")
+    for value, c in zip(values, count, strict=True):
+        if isinstance(value, float):
+            proportions.append(value / c)
+        elif isinstance(value, Sequence):
+            proportions.append(len(value) / c)
+        else:
+            raise ValueError(f"Unexpected value for `{keys}`: {value}")
 
-    else:
-        for value, c in zip(values, count, strict=True):
-            if isinstance(value, list):
-                proportions.append(len(value) / c)
-            else:
-                raise ValueError(f"Unexpected value for `{key}`: {value}")
     percentages = pd.Series(proportions) * 100
     return percentages.mean()

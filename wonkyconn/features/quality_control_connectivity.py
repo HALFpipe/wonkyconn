@@ -1,4 +1,6 @@
-from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
+from __future__ import (
+    annotations,
+)  # seann: added future import for annotations to allow type hints in function signatures
 
 from itertools import chain
 from typing import Iterable
@@ -36,7 +38,16 @@ def calculate_qcfc(
         pd.DataFrame: The QCFC values between connectivity matrices and the metric.
 
     """
-    metrics = np.asarray([connectivity_matrix.metadata.get(metric_key, np.nan) for connectivity_matrix in connectivity_matrices])
+    metrics = np.asarray(
+        [
+            connectivity_matrix.metadata.get(metric_key, np.nan)
+            for connectivity_matrix in connectivity_matrices
+        ]
+    )
+    if np.isnan(metrics).all():
+        raise ValueError(
+            f"None of the connectivity matrices have a metric with key '{metric_key}'"
+        )
     covariates = np.asarray(dmatrix("age + gender", data_frame))
 
     connectivity_arrays = [
@@ -74,7 +85,9 @@ def calculate_median_absolute(x: "pd.Series[float]") -> float:
 
 
 # seann: added type for series
-def significant_level(x: "pd.Series[float]", alpha: float = 0.05, correction: str | None = None) -> npt.NDArray[np.bool_]:
+def significant_level(
+    x: "pd.Series[float]", alpha: float = 0.05, correction: str | None = None
+) -> npt.NDArray[np.bool_]:
     """
     Apply FDR correction to a pandas.Series p-value object.
 
