@@ -44,14 +44,10 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         None
     """
     # seann: added type for series
-    group_labels: "pd.Series[str]" = pd.Series(
-        result_frame.index.map(partial(_make_group_label, group_by))
-    )
+    group_labels: "pd.Series[str]" = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
     data_frame = result_frame.reset_index()
 
-    figure, axes_array = plt.subplots(
-        nrows=1, ncols=5, figsize=(22, 4), constrained_layout=True, sharey=True
-    )
+    figure, axes_array = plt.subplots(nrows=1, ncols=5, figsize=(22, 4), constrained_layout=True, sharey=True)
 
     (
         median_absolute_qcfc_axes,
@@ -77,9 +73,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         color=palette[1],
         ax=percentage_significant_qcfc_axes,
     )
-    percentage_significant_qcfc_axes.set_title(
-        "Percentage of significant QC-FC correlations"
-    )
+    percentage_significant_qcfc_axes.set_title("Percentage of significant QC-FC correlations")
     percentage_significant_qcfc_axes.set_xlabel("Percentage %")
 
     sns.barplot(
@@ -91,9 +85,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
-    plot_degrees_of_freedom_loss(
-        data_frame, group_labels, degrees_of_freedom_loss_axes, legend_axes
-    )
+    plot_degrees_of_freedom_loss(data_frame, group_labels, degrees_of_freedom_loss_axes, legend_axes)
 
     figure.savefig(output_dir / "metrics.png")
 

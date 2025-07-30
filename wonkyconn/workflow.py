@@ -45,19 +45,14 @@ def workflow(args: argparse.Namespace) -> None:
     data_frame = load_data_frame(args)
 
     # Load atlases
-    seg_to_atlas: dict[str, Atlas] = {
-        seg: Atlas.create(seg, Path(atlas_path_str))
-        for seg, atlas_path_str in args.seg_to_atlas
-    }
+    seg_to_atlas: dict[str, Atlas] = {seg: Atlas.create(seg, Path(atlas_path_str)) for seg, atlas_path_str in args.seg_to_atlas}
     # seann: Add debugging to see what the atlas dictionary contains
     gc_log.debug(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
 
     group_by: list[str] = args.group_by
     Group = namedtuple("Group", group_by)  # type: ignore[misc]
 
-    grouped_connectivity_matrix: defaultdict[
-        tuple[str, ...], list[ConnectivityMatrix]
-    ] = defaultdict(list)
+    grouped_connectivity_matrix: defaultdict[tuple[str, ...], list[ConnectivityMatrix]] = defaultdict(list)
 
     segs: set[str] = set()
     for timeseries_path in index.get(suffix="timeseries", extension=".tsv"):
@@ -76,25 +71,17 @@ def workflow(args: argparse.Namespace) -> None:
             grouped_connectivity_matrix[group].append(connectivity_matrix)
             seg = index.get_tag_value(relmat_path, args.seg_key)
             if seg is None:
-                raise ValueError(
-                    f'Connectivity matrix "{relmat_path}" does not have key "{args.seg_key}"'
-                )
+                raise ValueError(f'Connectivity matrix "{relmat_path}" does not have key "{args.seg_key}"')
             segs.add(seg)
 
     if not grouped_connectivity_matrix:
         raise ValueError("No groups found")
 
-    distance_matrices: dict[str, npt.NDArray[np.float64]] = {
-        seg: seg_to_atlas[seg].get_distance_matrix() for seg in segs
-    }
+    distance_matrices: dict[str, npt.NDArray[np.float64]] = {seg: seg_to_atlas[seg].get_distance_matrix() for seg in segs}
 
     records: list[dict[str, Any]] = list()
-    for key, connectivity_matrices in tqdm(
-        grouped_connectivity_matrix.items(), unit="groups"
-    ):
-        record = make_record(
-            index, data_frame, connectivity_matrices, distance_matrices, args
-        )
+    for key, connectivity_matrices in tqdm(grouped_connectivity_matrix.items(), unit="groups"):
+        record = make_record(index, data_frame, connectivity_matrices, distance_matrices, args)
         record.update(dict(zip(group_by, key)))
         records.append(record)
 
@@ -117,9 +104,7 @@ def make_record(
         sub = index.get_tag_value(c.path, "sub")
 
         if sub is None:
-            raise ValueError(
-                f'Connectivity matrix "{c.path}" does not have a subject tag'
-            )
+            raise ValueError(f'Connectivity matrix "{c.path}" does not have a subject tag')
 
         if sub in data_frame.index:
             seg_subjects.append(sub)

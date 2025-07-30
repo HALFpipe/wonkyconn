@@ -4,9 +4,7 @@ from numpy import typing as npt
 from scipy.stats import spearmanr
 
 
-def calculate_distance_dependence(
-    qcfc: pd.DataFrame, distance_matrix: npt.NDArray[np.float64]
-) -> float:
+def calculate_distance_dependence(qcfc: pd.DataFrame, distance_matrix: npt.NDArray[np.float64]) -> float:
     """
     Calculate the Spearman correlation between the distance matrix and the QC-FC correlation values.
 
