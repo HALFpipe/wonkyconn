@@ -48,14 +48,14 @@ WONKYCONN uses a single command-line interface. There are no separate scripts to
     ```bash
     wonkyconn <bids_dir> <output_dir> group \
         --phenotypes <phenotypes.tsv> \
-        --seg-to-atlas <seg_label> <atlas_path>
+        --atlas <seg_label> <atlas_path>
     ```
 
 2. **Full Example:**
     ```bash
     wonkyconn /path/to/fmriprep/output /path/to/output group \
         --phenotypes participants.tsv \
-        --seg-to-atlas schaefer400 /path/to/atlas/schaefer400.nii.gz \
+        --atlas schaefer400 /path/to/atlas/schaefer400.nii.gz \
         --group-by seg desc \
         --verbosity 2
     ```
@@ -64,7 +64,7 @@ WONKYCONN uses a single command-line interface. There are no separate scripts to
     - `bids_dir`: Input BIDS directory containing fMRIPrep outputs
     - `output_dir`: Directory for results
     - `--phenotypes`: Path to participants.tsv file
-    - `--seg-to-atlas`: Pairs of segmentation label and atlas path
+    - `--atlas`: Pairs of segmentation label and atlas path
     - `--group-by`: Tags to group results by (default: seg)
     - `--verbosity`: Logging level (0-3)
 

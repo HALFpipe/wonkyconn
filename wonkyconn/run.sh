@@ -24,6 +24,6 @@ mkdir -p ${OUTPUT_DIR}
 # Run WONKYCONN
 wonkyconn ${BIDS_DIR} ${OUTPUT_DIR} group \
     --phenotypes ${PHENOTYPES} \
-    --seg-to-atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
+    --atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
     --group-by seg desc \
     --verbosity 2
