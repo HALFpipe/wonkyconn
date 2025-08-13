@@ -65,6 +65,16 @@ jobs:
       id: download_h2bids
       run: tox -e test_data_h2bids_denoise_metadata
 
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      name: Download h2bids impute and metadata test data
+      id: download_h2bids
+      run: tox -e test_data_h2bids_impute_and_metadata
+
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      name: Download h2bids impute nan test data
+      id: download_h2bids
+      run: tox -e test_data_h2bids_impute_nan
+
   build:
     runs-on: ubuntu-latest
     steps:
