@@ -121,7 +121,7 @@ def test_smoke(tmp_path: Path, n):
 
 # parametrize to test different h2bids outputs instead of creating multiple test functions
 @pytest.mark.parametrize("flag", ["denoise_metadata", "impute_and_metadata", "impute_nan"])
-def test_smoke_h2bids_denoise_metadata(tmp_path: Path, flag):
+def test_smoke_h2bids(tmp_path: Path, flag):
     data_path = Path(resource_filename("wonkyconn", f"data/test_data/test_data_h2bids_{flag}"))
     atlas_label = f"schaefer400"
     dseg_path = data_path / "atlas" / f"atlas-Schaefer2018Combined_dseg.nii.gz"
