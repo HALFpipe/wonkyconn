@@ -1,13 +1,13 @@
 from functools import partial
 from pathlib import Path
 from typing import Sequence
+
 import matplotlib
-from matplotlib.axes import Axes
 import matplotlib.patches as mpatches
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-
+from matplotlib.axes import Axes
 
 sns.set_palette("colorblind")
 palette = sns.color_palette(n_colors=6)
@@ -122,6 +122,6 @@ def plot_degrees_of_freedom_loss(
         "Motion scrubbing",
         "Non-steady states detector",
     ]
-    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels)]
+    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels, strict=False)]
     legend_axes.legend(handles=handles)
     legend_axes.axis("off")

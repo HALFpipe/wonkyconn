@@ -30,7 +30,8 @@ def calculate_qcfc(
     accounted for participant age and sex
 
     Parameters:
-        data_frame (pd.DataFrame): The data frame containing the covariates "age" and "gender". It needs to have one row for each connectivity matrix.
+        data_frame (pd.DataFrame): The data frame containing the covariates "age" and "gender".
+                                   It needs to have one row for each connectivity matrix.
         connectivity_matrices (Iterable[ConnectivityMatrix]): The connectivity matrices to calculate QCFC for.
         metric_key (str, optional): The key of the metric to use for QCFC calculation. Defaults to "MeanFramewiseDisplacement".
 
@@ -38,7 +39,9 @@ def calculate_qcfc(
         pd.DataFrame: The QCFC values between connectivity matrices and the metric.
 
     """
-    metrics = np.asarray([connectivity_matrix.metadata.get(metric_key, np.nan) for connectivity_matrix in connectivity_matrices])
+    metrics = np.asarray(
+        [connectivity_matrix.metadata.get(metric_key, np.nan) for connectivity_matrix in connectivity_matrices]
+    )
     if np.isnan(metrics).all():
         raise ValueError(f"None of the connectivity matrices have a metric with key '{metric_key}'")
     covariates = np.asarray(dmatrix("age + gender", data_frame))

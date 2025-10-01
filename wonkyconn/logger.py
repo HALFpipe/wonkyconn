@@ -8,12 +8,9 @@ from rich.logging import RichHandler
 
 
 def gc_logger(log_level: str = "INFO") -> logging.Logger:
-    # FORMAT = '\n%(asctime)s - %(name)s - %(levelname)s\n\t%(message)s\n'
-    FORMAT = "%(message)s"
-
     logging.basicConfig(
         level=log_level,
-        format=FORMAT,
+        format="%(message)s",
         datefmt="[%X]",
         handlers=[RichHandler()],
     )

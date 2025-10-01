@@ -45,7 +45,9 @@ def workflow(args: argparse.Namespace) -> None:
     data_frame = load_data_frame(args)
 
     # Load atlases
-    seg_to_atlas: dict[str, Atlas] = {seg: Atlas.create(seg, Path(atlas_path_str)) for seg, atlas_path_str in args.seg_to_atlas}
+    seg_to_atlas: dict[str, Atlas] = {
+        seg: Atlas.create(seg, Path(atlas_path_str)) for seg, atlas_path_str in args.seg_to_atlas
+    }
     # seann: Add debugging to see what the atlas dictionary contains
     gc_log.debug(f"Atlas dictionary contains: {list(seg_to_atlas.keys())}")
 
@@ -82,7 +84,7 @@ def workflow(args: argparse.Namespace) -> None:
     records: list[dict[str, Any]] = list()
     for key, connectivity_matrices in tqdm(grouped_connectivity_matrix.items(), unit="groups"):
         record = make_record(index, data_frame, connectivity_matrices, distance_matrices, args)
-        record.update(dict(zip(group_by, key)))
+        record.update(dict(zip(group_by, key, strict=False)))
         records.append(record)
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
@@ -117,7 +119,7 @@ def make_record(
 
         raise ValueError(f"Subject {sub} not found in participants file")
 
-    seg_data_frame = data_frame.loc[seg_subjects]  # type: ignore[index]
+    seg_data_frame = data_frame.loc[seg_subjects]
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices, args.metric_key)
 
     (seg,) = index.get_tag_values(args.seg_key, {c.path for c in connectivity_matrices})
