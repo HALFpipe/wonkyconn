@@ -42,7 +42,7 @@ dev = [
   "pandas-stubs",
   "types-tqdm",
 ]
-test = ["nibabel", "nilearn", "pytest", "pytest-cov", "templateflow < 23.0.0"]
+test = ["nibabel", "nilearn", "pytest", "pytest-cov", "templateflow"]
 docs = ["sphinx", "sphinx_rtd_theme", "myst-parser", "sphinx-argparse"]
 # Aliases
 tests = ["wonkyconn[test]"]
@@ -53,7 +53,7 @@ tests = ["wonkyconn[test]"]
 
 [tool.hatch.version]
 source = "vcs"
-fallback-version = "0.0.0+ci"   # <-- tmp fallback version for CI
+fallback-version = "0.0.0+ci" # <-- tmp fallback version for CI
 
 [tool.hatch.build.hooks.vcs]
 version-file = "wonkyconn/_version.py"
@@ -65,10 +65,18 @@ exclude = [".git_archival.txt"]
 packages = ["wonkyconn"]
 exclude = [".github", "wonkyconn/data/test_data"]
 
-[tool.black]
-target-version = ["py311"]
-exclude = "wonkyconn/_version.py"
-line-length = 151
+[tool.ruff]
+line-length = 127
+
+[tool.ruff.lint]
+select = [
+  "F", # pyflakes
+  "E", # pycodestyle
+  "W", # pycodestyle
+  "I", # isort
+  "B", # bugbears
+  "N", # pep8-naming
+]
 
 [tool.mypy]
 check_untyped_defs = true
