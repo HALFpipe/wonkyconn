@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections import defaultdict
 from hashlib import sha1
 from pathlib import Path
-from typing import Container, Mapping
+from typing import Mapping
 
 
 def create_defaultdict_of_set() -> defaultdict[str, set[Path]]:
@@ -98,16 +98,6 @@ class FileIndex:
             return set(self.paths_by_tags[key].keys())
 
         return set(k for k, v in self.paths_by_tags[key].items() if not paths.isdisjoint(v))
-
-    def get_tag_groups(self, keys: Container[str], paths: set[Path] | None = None) -> list[Mapping[str, str]]:
-        from pyrsistent import pmap
-
-        if paths is None:
-            paths = set(self.tags_by_paths.keys())
-
-        groups: set[Mapping[str, str]] = {pmap({k: v for k, v in self.tags_by_paths[path].items() if k in keys}) for path in paths}
-
-        return [dict(group) for group in groups]
 
     def get_associated_paths(self, path: Path, **tags: str) -> set[Path]:
         matches = self.get(**tags)

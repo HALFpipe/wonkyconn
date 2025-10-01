@@ -2,17 +2,16 @@
 Simple code to smoke test the functionality.
 """
 
-from pathlib import Path
-
 import json
 import re
+from pathlib import Path
 from shutil import copyfile
-import numpy as np
-import pytest
-from pkg_resources import resource_filename
 
+import numpy as np
 import pandas as pd
+import pytest
 import scipy
+from pkg_resources import resource_filename
 from tqdm.auto import tqdm
 
 from wonkyconn import __version__

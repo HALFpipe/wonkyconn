@@ -63,7 +63,9 @@ def _calculate_for_key(
     count: Sequence[int],
     keys: set[str],
 ) -> float:
-    values: Sequence[float | Sequence[str] | None] = [_get_values(connectivity_matrix, keys) for connectivity_matrix in connectivity_matrices]
+    values: Sequence[float | Sequence[str] | None] = [
+        _get_values(connectivity_matrix, keys) for connectivity_matrix in connectivity_matrices
+    ]
 
     if all(value is None for value in values):
         return np.nan
