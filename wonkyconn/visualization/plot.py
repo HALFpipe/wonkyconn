@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 
 
 sns.set_palette("colorblind")
-palette = sns.color_palette(n_colors=6)
+palette = sns.color_palette(n_colors=7)
 
 matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
@@ -44,12 +44,19 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     group_labels: "pd.Series[str]" = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
     data_frame = result_frame.reset_index()
 
-    figure, axes_array = plt.subplots(nrows=1, ncols=5, figsize=(22, 4), constrained_layout=True, sharey=True)
+    figure, axes_array = plt.subplots(
+        nrows=1,
+        ncols=6,
+        figsize=(26, 4),
+        constrained_layout=True,
+        sharey=True,
+    )
 
     (
         median_absolute_qcfc_axes,
         percentage_significant_qcfc_axes,
         distance_dependence_axes,
+        gcor_axes,
         degrees_of_freedom_loss_axes,
         legend_axes,
     ) = axes_array
@@ -82,7 +89,26 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
-    plot_degrees_of_freedom_loss(data_frame, group_labels, degrees_of_freedom_loss_axes, legend_axes)
+    # seann: GCOR visualization with horizontal bars and SEM whiskers
+    gcor_axes.barh(group_labels, data_frame.gcor_mean, color=palette[3])
+    gcor_axes.set_title("Global correlation (GCOR)")
+    gcor_axes.set_xlabel("Mean correlation")
+    gcor_axes.errorbar(
+        data_frame.gcor_mean,
+        group_labels,
+        xerr=data_frame.gcor_sem,
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+    )
+
+    plot_degrees_of_freedom_loss(
+        data_frame,
+        group_labels,
+        degrees_of_freedom_loss_axes,
+        legend_axes,
+        [palette[4], palette[5], palette[6]],
+    )
 
     figure.savefig(output_dir / "metrics.png")
 
@@ -92,8 +118,8 @@ def plot_degrees_of_freedom_loss(
     group_labels: "pd.Series[str]",
     degrees_of_freedom_loss_axes: Axes,
     legend_axes: Axes,
+    colors: list[str],
 ) -> None:
-    colors = [palette[3], palette[4], palette[5]]
     sns.barplot(
         y=group_labels,
         x=result_frame.confound_regression_percentage,
