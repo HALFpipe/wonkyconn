@@ -140,5 +140,5 @@ dmypy.json
 
 *.code-workspace
 
-#scratch 
+#scratch
 seann_scratch.sh

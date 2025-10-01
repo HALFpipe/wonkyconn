@@ -13,11 +13,10 @@ from ..base import ConnectivityMatrix
 # seann: AFNI's `gcor2` computes GCOR as ||(1/M) Σ u_i||^2 for unit-variance time series,
 # which equals the average of the pairwise dot products u_i · u_j forming R.
 
+
 def _validate_square_matrix(matrix: npt.NDArray[np.float64]) -> None:
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(
-            "Connectivity matrix must be a square 2D array to compute GCOR."
-        )
+        raise ValueError("Connectivity matrix must be a square 2D array to compute GCOR.")
 
 
 def compute_gcor(matrix: npt.NDArray[np.float64]) -> float:
@@ -51,8 +50,6 @@ def calculate_gcor(
         sem_value = np.nan
     else:
         # seann: SEM requires unbiased std (ddof=1) over finite entries
-        sem_value = float(
-            np.nanstd(data, ddof=1, dtype=np.float64) / np.sqrt(valid_count)
-        )
+        sem_value = float(np.nanstd(data, ddof=1, dtype=np.float64) / np.sqrt(valid_count))
 
     return MeanAndSEMResult(mean=mean_value, sem=sem_value)
