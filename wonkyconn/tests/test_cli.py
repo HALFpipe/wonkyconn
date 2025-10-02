@@ -85,7 +85,7 @@ def test_smoke(tmp_path: Path, n):
             continue
         for sub in subjects:
             _copy_file(path, bids_dir / path.relative_to(data_path), str(sub))
-            
+
     phenotypes = pd.DataFrame(
         dict(
             participant_id=subjects,
