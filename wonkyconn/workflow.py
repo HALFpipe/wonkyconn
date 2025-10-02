@@ -16,6 +16,7 @@ from .features.calculate_degrees_of_freedom import (
     calculate_degrees_of_freedom_loss,
 )
 from .features.distance_dependence import calculate_distance_dependence
+from .features.gcor import calculate_gcor
 from .features.quality_control_connectivity import (
     calculate_median_absolute,
     calculate_qcfc,
@@ -115,10 +116,15 @@ def make_record(
     (seg,) = index.get_tag_values("seg", {c.path for c in connectivity_matrices})
     atlas = seg_to_atlas[seg]
 
+    # seann: compute group-level GCOR statistics (mean and SEM)
+    gcor = calculate_gcor(connectivity_matrices)
+
     record = dict(
         median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
         distance_dependence=calculate_distance_dependence(qcfc, atlas),
+        gcor_mean=gcor.mean,
+        gcor_sem=gcor.sem,
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
 
