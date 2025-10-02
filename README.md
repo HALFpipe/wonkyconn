@@ -22,7 +22,7 @@ We are currently working towards 0.1.0 release!!!! This is not a stable project 
 - Calculate distance dependence based on given BEP17 naming for atlas
 
   ```bash
-    --seg-to-atlas Schaefer20187Networks200Parcels file.nii.gz
+    --atlas Schaefer20187Networks200Parcels file.nii.gz
   ```
 
 ## Tasks

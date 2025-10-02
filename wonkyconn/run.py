@@ -43,14 +43,14 @@ def global_parser() -> argparse.ArgumentParser:
         ),
         required=True,
     )
+    # Fix: --atlas argument only accepts one atlas at a time, replaces --seg-by-atlas
     parser.add_argument(
         "--atlas",
         type=str,
         nargs=2,
-        action="append",
-        metavar=("NAME", "ATLAS"),
-        default=list(),
-        help="Specify the name of a segmentation and the corresponding atlas file",
+        metavar=("LABEL", "ATLAS_PATH"),
+        required=True,
+        help="Specify the atlas label and the path to the atlas file (e.g. --atlas Schaefer2018 /path/to/atlas.nii.gz)",
     )
 
     parser.add_argument("-v", "--version", action="version", version=__version__)

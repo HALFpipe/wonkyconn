@@ -60,6 +60,21 @@ jobs:
       id: download
       run: tox -e test_data
 
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      name: Download h2bids denoise metadata test data
+      id: download_h2bids_denoise_metadata
+      run: tox -e test_data_h2bids_denoise_metadata
+
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      name: Download h2bids impute and metadata test data
+      id: download_h2bids_impute_and_metadata
+      run: tox -e test_data_h2bids_impute_and_metadata
+
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      name: Download h2bids impute nan test data
+      id: download_h2bids_impute_nan
+      run: tox -e test_data_h2bids_impute_nan
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -161,7 +176,7 @@ jobs:
       if: ${{ contains(needs.check_skip_flags.outputs.head-commit-message, 'full_test') }} || ${{ github.event.pull_request.merged }}
       run: pytest --cov=wonkyconn --cov-report=xml --pyargs wonkyconn
 
-    - uses: codecov/codecov-action@v4
+    - uses: codecov/codecov-action@v5
       if: ${{ always() }}
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
