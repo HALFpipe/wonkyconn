@@ -63,7 +63,7 @@ exclude = [".git_archival.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["wonkyconn"]
-exclude = [".github", "wonkyconn/data/test_data"]
+exclude = [".github", "wonkyconn/data"]
 
 [tool.ruff]
 line-length = 127

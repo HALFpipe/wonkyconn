@@ -4,6 +4,7 @@ Simple code to smoke test the functionality.
 
 import json
 import re
+from math import isclose
 from pathlib import Path
 from shutil import copyfile
 
@@ -15,6 +16,7 @@ from pkg_resources import resource_filename
 from tqdm.auto import tqdm
 
 from wonkyconn import __version__
+from wonkyconn.file_index.bids import BIDSIndex
 from wonkyconn.run import global_parser, main
 from wonkyconn.workflow import workflow
 
@@ -62,10 +64,9 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         copyfile(path, new_path)
 
 
-# hi test
 @pytest.mark.smoke
-def test_smoke(tmp_path: Path):
-    data_path = Path(resource_filename("wonkyconn", "data/test_data/connectome_Schaefer20187Networks_dev"))
+def test_giga_connectome(tmp_path: Path):
+    data_path = Path(resource_filename("wonkyconn", "data/giga_connectome/connectome_Schaefer20187Networks_dev"))
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
@@ -91,21 +92,18 @@ def test_smoke(tmp_path: Path):
     phenotypes_path = bids_dir / "participants.tsv"
     phenotypes.to_csv(phenotypes_path, sep="\t", index=False)
 
-    seg_to_atlas_args: list[str] = []
+    atlas_args: list[str] = []
     for n in [100, 200, 300, 400, 500, 600, 800]:
-        seg_to_atlas_args.append("--seg-to-atlas")
-        seg_to_atlas_args.append(f"Schaefer20187Networks{n}Parcels")
+        atlas_args.append("--atlas")
+        atlas_args.append(f"Schaefer20187Networks{n}Parcels")
         dseg_path = data_path / "atlases" / "sub-1" / "func" / f"sub-1_seg-Schaefer20187Networks{n}Parcels_dseg.nii.gz"
-        seg_to_atlas_args.append(str(dseg_path))
+        atlas_args.append(str(dseg_path))
 
     parser = global_parser()
     argv = [
         "--phenotypes",
         str(phenotypes_path),
-        "--group-by",
-        "seg",
-        "desc",
-        *seg_to_atlas_args,
+        *atlas_args,
         str(bids_dir),
         str(output_dir),
         "group",
@@ -116,3 +114,57 @@ def test_smoke(tmp_path: Path):
 
     assert (output_dir / "metrics.tsv").is_file()
     assert (output_dir / "metrics.png").is_file()
+
+
+@pytest.mark.smoke
+def test_halfpipe(tmp_path: Path):
+    data_path = Path(resource_filename("wonkyconn", "data"))
+
+    bids_dir = data_path / "halfpipe"
+
+    index = BIDSIndex()
+    index.put(bids_dir)
+    for timeseries_path in index.get(suffix="timeseries", extension=".json"):
+        timeseries_path = timeseries_path.with_suffix(".tsv")
+        if not timeseries_path.is_file():
+            with timeseries_path.open("w"):
+                pass
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    phenotypes_path = bids_dir / "participants.tsv"
+
+    atlas_args: list[str] = list()
+    atlas_args.append("--atlas")
+    atlas_args.append("Schaefer2018Combined")
+    atlas_args.append(str(data_path / "atlases/atlas-Schaefer2018Combined_dseg.nii.gz"))
+
+    parser = global_parser()
+    argv = [
+        "--phenotypes",
+        str(phenotypes_path),
+        *atlas_args,
+        str(bids_dir),
+        str(output_dir),
+        "group",
+    ]
+    args = parser.parse_args(argv)
+
+    workflow(args)
+
+    assert (output_dir / "metrics.tsv").is_file()
+    assert (output_dir / "metrics.png").is_file()
+
+    data_frame = pd.read_csv(output_dir / "metrics.tsv", sep="\t")
+    data_frame = data_frame.set_index("feature")
+
+    assert isclose(data_frame.loc["cCompCor"]["motion_scrubbing_percentage"], 0.0)
+    assert data_frame.loc["cCompCor"]["confound_regression_percentage"] > 0.0
+
+    assert data_frame.loc["motionParametersScrubbing"]["motion_scrubbing_percentage"] > 0.0
+    assert data_frame.loc["motionParametersScrubbing"]["confound_regression_percentage"] > 0.0
+
+    assert (
+        data_frame.loc["motionParametersScrubbing"]["distance_dependence"] < data_frame.loc["cCompCor"]["distance_dependence"]
+    )

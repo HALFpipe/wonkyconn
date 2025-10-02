@@ -117,11 +117,7 @@ def plot_degrees_of_freedom_loss(
     )
     degrees_of_freedom_loss_axes.set_title("Percentage of degrees of freedom lost")
     degrees_of_freedom_loss_axes.set_xlabel("Percentage %")
-    labels = [
-        "Confounds regression",
-        "Motion scrubbing",
-        "Non-steady states detector",
-    ]
+    labels = ["Confounds regression", "Motion scrubbing", "Non-steady states detector"]
     handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels, strict=False)]
     legend_axes.legend(handles=handles)
     legend_axes.axis("off")
