@@ -35,13 +35,6 @@ def global_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--group-by",
-        type=str,
-        nargs="+",
-        default=["seg"],
-        help="Select which tags to group the connectivity matrices by. Default is `seg`",
-    )
-    parser.add_argument(
         "--phenotypes",
         type=str,
         help=(
@@ -51,25 +44,13 @@ def global_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument(
-        "--seg-key",
-        type=str,
-        help="Tag used to identify which segmentation was used to create each input. Default is `seg` as per BEP017",
-        default="seg",
-    )
-    parser.add_argument(
-        "--seg-to-atlas",
+        "--atlas",
         type=str,
         nargs=2,
         action="append",
-        metavar=("SEG", "ATLAS"),
+        metavar=("NAME", "ATLAS"),
         default=list(),
-        help="Specify the atlas file to use for a segmentation label in the data",
-    )
-    parser.add_argument(
-        "--metric-key",
-        type=str,
-        help="Which metadata key is used to inform QC-FC calculation",
-        default="MeanFramewiseDisplacement",
+        help="Specify the name of a segmentation and the corresponding atlas file",
     )
 
     parser.add_argument("-v", "--version", action="version", version=__version__)

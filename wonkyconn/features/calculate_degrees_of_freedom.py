@@ -1,7 +1,7 @@
 """Calculate degree of freedom"""
 
 from functools import partial
-from typing import NamedTuple, Sequence
+from typing import Callable, NamedTuple, Sequence
 
 import numpy as np
 import pandas as pd
@@ -31,40 +31,67 @@ def calculate_degrees_of_freedom_loss(
     # seann: ensure count is a list of integers instead of a numpy array
     count: list[int] = [connectivity_matrix.metadata["NumberOfVolumes"] for connectivity_matrix in connectivity_matrices]
 
-    calculate = partial(_calculate_for_key, connectivity_matrices, count)
+    calculate = partial(calculate_for_key, connectivity_matrices, count)
     return DegreesOfFreedomLossResult(
-        confound_regression_percentage=calculate({"ConfoundRegressors"}),
-        motion_scrubbing_percentage=calculate({"NumberOfVolumesDiscardedByMotionScrubbing"}),
-        nonsteady_states_detector_percentage=calculate({"NumberOfVolumesDiscardedByNonsteadyStatesDetector", "DummyScans"}),
+        confound_regression_percentage=calculate(
+            keys=["ConfoundRegressors"],
+            predicate=lambda confound_regressor: not confound_regressor.startswith("motion_outlier"),
+        ),
+        motion_scrubbing_percentage=calculate(
+            keys=["NumberOfVolumesDiscardedByMotionScrubbing", "ConfoundRegressors"],
+            predicate=lambda confound_regressor: confound_regressor.startswith("motion_outlier"),
+        ),
+        nonsteady_states_detector_percentage=calculate(
+            keys=["NumberOfVolumesDiscardedByNonsteadyStatesDetector", "DummyScans"],
+        ),
     )
 
 
-def _get_values(connectivity_matrix: ConnectivityMatrix, keys: set[str]) -> float | Sequence[str] | None:
+def _get_value(connectivity_matrix: ConnectivityMatrix, keys: list[str]) -> float | Sequence[str] | None:
     metadata = connectivity_matrix.metadata
-    values: set[float | tuple[str, ...]] = set()
     for key in keys:
         if key not in metadata:
             continue
         value = metadata[key]
         if isinstance(value, (int, float)):
-            values.add(float(value))
+            return float(value)
         elif isinstance(value, Sequence):
-            values.add(tuple(value))
-    if len(values) == 0:
-        return None
-    if len(values) > 1:
-        raise ValueError(f"Multiple values found for keys {keys} in metadata: {values}")
-    return next(iter(values))
+            return tuple(value)
+    return None
 
 
-# seann: ensure function accepts sequence of integers
-def _calculate_for_key(
+def calculate_for_key(
     connectivity_matrices: list[ConnectivityMatrix],
     count: Sequence[int],
-    keys: set[str],
+    keys: list[str],
+    predicate: Callable[[str], bool] | None = None,
 ) -> float:
+    """Get the mean percentage for a given metadata key.
+
+    Parameters
+    ----------
+    connectivity_matrices : list[ConnectivityMatrix]
+        List of connectivity matrices.
+
+    count : Sequence[int]
+        The total number of volumes for each connectivity matrix.
+
+    keys : list[str]
+        The list of metadata keys to use to calculate the percentage in decreasing order
+        of priority. The key can either be a float or a sequence of strings.
+
+    predicate : Callable[[str], bool] | None, optional
+        A function that takes a string and returns a boolean. If provided, it will be used
+        to filter the values in the metadata key if the metadata key is a sequence of strings.
+
+    Returns
+    -------
+    float
+        The mean percentage.
+    """
+
     values: Sequence[float | Sequence[str] | None] = [
-        _get_values(connectivity_matrix, keys) for connectivity_matrix in connectivity_matrices
+        _get_value(connectivity_matrix, keys) for connectivity_matrix in connectivity_matrices
     ]
 
     if all(value is None for value in values):
@@ -75,7 +102,11 @@ def _calculate_for_key(
         if isinstance(value, float):
             proportions.append(value / c)
         elif isinstance(value, Sequence):
-            proportions.append(len(value) / c)
+            if predicate is None:
+                k = len(value)
+            else:
+                k = sum(1 for v in value if predicate(v))
+            proportions.append(k / c)
         else:
             raise ValueError(f"Unexpected value for `{keys}`: {value}")
 

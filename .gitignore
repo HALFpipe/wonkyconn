@@ -1,5 +1,6 @@
 */_version.py
-*/data/test_data/
+wonkyconn/data/atlases*
+wonkyconn/data/halfpipe
 output/
 work/
 wonkyconnenv/
