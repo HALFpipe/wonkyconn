@@ -2,7 +2,7 @@ name: validate CITATION.cff
 
 on:
     push:
-        branches: main
+        branches: [main]
     pull_request:
         branches: ['*']
 
