@@ -26,13 +26,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - run: |
+          git config --global user.name "halfpipe"
+          git config --global user.email "halfpipe@fmri.science"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up environment
-        run: |
-          git config user.name "halfpipe"
-          git config user.email "halfpipe@fmri.science"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/templateflow
+          key: templateflow
       - uses: prefix-dev/setup-pixi@194d461b21b6c5717c722ffc597fa91ed2ff29fa
         with:
           pixi-version: v0.53.0
