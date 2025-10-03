@@ -123,11 +123,6 @@ def test_halfpipe(data_path: Path, tmp_path: Path):
 
     index = BIDSIndex()
     index.put(bids_dir)
-    for timeseries_path in index.get(suffix="timeseries", extension=".json"):
-        timeseries_path = timeseries_path.with_suffix(".tsv")
-        if not timeseries_path.is_file():
-            with timeseries_path.open("w"):
-                pass
 
     output_dir = tmp_path / "output"
     output_dir.mkdir()

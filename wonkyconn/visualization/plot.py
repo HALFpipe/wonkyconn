@@ -53,6 +53,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         figsize=(26, 4),
         constrained_layout=True,
         sharey=True,
+        dpi=300,
     )
 
     (
@@ -64,46 +65,25 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         legend_axes,
     ) = axes_array
 
-    sns.barplot(
-        y=group_labels,
-        x=data_frame.median_absolute_qcfc,
-        color=palette[0],
-        ax=median_absolute_qcfc_axes,
-    )
+    sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
     median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
     median_absolute_qcfc_axes.set_xlabel("Median absolute value")
     median_absolute_qcfc_axes.set_ylabel("Group")
 
     sns.barplot(
-        y=group_labels,
-        x=data_frame.percentage_significant_qcfc,
-        color=palette[1],
-        ax=percentage_significant_qcfc_axes,
+        y=group_labels, x=data_frame.percentage_significant_qcfc, color=palette[1], ax=percentage_significant_qcfc_axes
     )
     percentage_significant_qcfc_axes.set_title("Percentage of significant QC-FC correlations")
     percentage_significant_qcfc_axes.set_xlabel("Percentage %")
 
-    sns.barplot(
-        y=group_labels,
-        x=data_frame.distance_dependence,
-        color=palette[2],
-        ax=distance_dependence_axes,
-    )
+    sns.barplot(y=group_labels, x=data_frame.distance_dependence, color=palette[2], ax=distance_dependence_axes)
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
     # seann: GCOR visualization with horizontal bars and SEM whiskers
-    gcor_axes.barh(group_labels, data_frame.gcor_mean, color=palette[3])
+    sns.barplot(y=group_labels, x=data_frame.gcor, color=palette[3], ax=gcor_axes)
     gcor_axes.set_title("Global correlation (GCOR)")
     gcor_axes.set_xlabel("Mean correlation")
-    gcor_axes.errorbar(
-        data_frame.gcor_mean,
-        group_labels,
-        xerr=data_frame.gcor_sem,
-        fmt="none",
-        ecolor="black",
-        capsize=3,
-    )
 
     plot_degrees_of_freedom_loss(
         data_frame,

@@ -49,6 +49,7 @@ def global_parser() -> argparse.ArgumentParser:
         nargs=2,
         action="append",
         metavar=("LABEL", "ATLAS_PATH"),
+        required=True,
         help="Specify the atlas label and the path to the atlas file (for example --atlas Schaefer2018 /path/to/atlas.nii.gz)",
     )
 

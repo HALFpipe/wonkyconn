@@ -166,8 +166,7 @@ def make_record(
         median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
         distance_dependence=calculate_distance_dependence(qcfc, distance_matrix),
-        gcor_mean=gcor.mean,
-        gcor_sem=gcor.sem,
+        gcor=gcor,
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
 
