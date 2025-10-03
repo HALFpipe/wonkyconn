@@ -1,21 +1,24 @@
 */_version.py
-wonkyconn/data/atlases*
-wonkyconn/data/halfpipe
-wonkyconn/data/test_data2
-wonkyconn/data/test_data2.7z
+# Data directories and files
+wonkyconn/data/
 output/
 work/
-wonkyconnenv/
-wonkyconn_outputs/
-giga_connectome_outputs/
-local_call_cmds
-
-# Data files
+data/
 *.nii.gz
 *.nii
 *.mat
 *.h5
-data/
+*.tsv
+*.json
+
+# Project-specific
+wonkyconnenv/
+wonkyconn_outputs/
+giga_connectome_outputs/
+local_call_cmds
+*/_version.py
+seann_scratch.sh
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
