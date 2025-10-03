@@ -7,8 +7,8 @@ from typing import Iterable
 import numpy as np
 from numpy import typing as npt
 
-from .base import MeanAndSEMResult
 from ..base import ConnectivityMatrix
+from .base import MeanAndSEMResult
 
 # seann: AFNI's `gcor2` computes GCOR as ||(1/M) Σ u_i||^2 for unit-variance time series,
 # which equals the average of the pairwise dot products u_i · u_j forming R.

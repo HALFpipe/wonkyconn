@@ -162,8 +162,8 @@ def test_halfpipe(tmp_path: Path):
 @pytest.mark.parametrize("flag", ["denoise_metadata", "impute_and_metadata", "impute_nan"])
 def test_smoke_h2bids(tmp_path: Path, flag):
     data_path = Path(resource_filename("wonkyconn", f"data/test_data/test_data_h2bids_{flag}"))
-    atlas_label = f"schaefer400"
-    dseg_path = data_path / "atlas" / f"atlas-Schaefer2018Combined_dseg.nii.gz"
+    atlas_label = "schaefer400"
+    dseg_path = data_path / "atlas" / "atlas-Schaefer2018Combined_dseg.nii.gz"
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
