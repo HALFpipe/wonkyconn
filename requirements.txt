@@ -23,6 +23,7 @@ nibabel==5.2.1
 nilearn==0.10.3
 num2words==0.5.13
 numpy==1.26.4
+prompt_toolkit==3.0.43
 packaging==24.0
 pandas==2.2.1
 pillow==10.2.0

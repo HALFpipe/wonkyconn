@@ -18,10 +18,17 @@ matplotlib.rcParams["font.family"] = "DejaVu Sans"
 # seann: added type for series
 def _make_group_label(group_by: list[str], values: "pd.Series[str]") -> str:
     label: str = ""
-    for a, b in zip(group_by, values, strict=True):
+    value_list = list(values)
+    names = list(group_by)
+    if len(names) < len(value_list):
+        names += [f"level_{i}" for i in range(len(names), len(value_list))]
+    if len(value_list) < len(names):
+        value_list += [""] * (len(names) - len(value_list))
+
+    for name, value in zip(names, value_list):
         if label:
             label += "\n"
-        label += f"{a}-{b}"
+        label += f"{name}-{value}"
     return label
 
 
