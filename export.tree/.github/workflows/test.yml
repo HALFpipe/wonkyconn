@@ -1,0 +1,49 @@
+on:
+  push:
+    branches:
+      - main
+      - maint/*
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - main
+      - maint/*
+    paths: ["wonkyconn/*", "pyproject.toml", "pixi.lock", "Dockerfile"]
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          git config --global user.name "halfpipe"
+          git config --global user.email "halfpipe@fmri.science"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/templateflow
+          key: templateflow
+      - uses: prefix-dev/setup-pixi@194d461b21b6c5717c722ffc597fa91ed2ff29fa
+        with:
+          pixi-version: v0.53.0
+          cache: true
+          environments: test
+          frozen: true
+      - run: pixi run test
+      - uses: codecov/codecov-action@v5
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
