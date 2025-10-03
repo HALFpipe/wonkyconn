@@ -7240,14 +7240,14 @@ packages:
   timestamp: 1756885433337
 - pypi: ./
   name: wonkyconn
-  version: 0.0.1.dev67+ci
-  sha256: ae7df74f7a8d33f27f9a8d6311563123e67b4c7606db086662f11a531415704a
+  version: 0.0.1.dev67+ci.g83e894299.d20251003
+  sha256: c3e909f2005407287bfafa2d93f93248c89a2ac9aa12b6e153950f153b449e9b
   requires_python: '>=3.11'
   editable: true
 - pypi: ./
   name: wonkyconn
-  version: 0.0.1.dev67+ci
-  sha256: ae7df74f7a8d33f27f9a8d6311563123e67b4c7606db086662f11a531415704a
+  version: 0.0.1.dev67+ci.g83e894299.d20251003
+  sha256: c3e909f2005407287bfafa2d93f93248c89a2ac9aa12b6e153950f153b449e9b
   requires_python: '>=3.11'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/wrapt-1.17.3-py312h4c3975b_1.conda
   sha256: 8320d5af37eb8933e5d129884ea013b2687e75b08aff5216193df3378eaea92f

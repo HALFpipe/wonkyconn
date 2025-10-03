@@ -1,17 +1,14 @@
----
-name: docker
-
 on:
   push:
-    branches: ['main']
-    tags: ['*']
+    branches: ["main"]
+    tags: ["*"]
   pull_request:
-    branches: ['*']
+    branches: ["*"]
     paths:
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - '.github/workflows/docker.yml'
-      - 'tools/*'
+      - "Dockerfile"
+      - "requirements.txt"
+      - ".github/workflows/docker.yml"
+      - "tools/*"
   release:
     types: [published]
 
@@ -25,28 +22,28 @@ permissions:
 env:
   USER_NAME: bids
   REPO_NAME: giga_connectome
-  DATA:  /home/runner/work/giga_connectome/giga_connectome/giga_connectome/data/test_data
+  DATA: /home/runner/work/giga_connectome/giga_connectome/giga_connectome/data/test_data
   IMAGE: /home/runner/work/giga_connectome/giga_connectome/docker
 
 jobs:
   download-test-data:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: actions/cache@v4
-      id: cache
-      with:
-        path: ${{ env.DATA }}
-        key: data
-    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      uses: actions/setup-python@v5
-    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-      name: Download fmriprep derivative of ds000017
-      run: |
-        pip install tox
-        tox -e test_data
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ${{ env.DATA }}
+          key: data
+      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/setup-python@v5
+      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        name: Download fmriprep derivative of ds000017
+        run: |
+          pip install tox
+          tox -e test_data
 
   docker-build:
     runs-on: ubuntu-latest
@@ -71,7 +68,15 @@ jobs:
     needs: [download-test-data, docker-build]
     strategy:
       matrix:
-        atlas: ['Schaefer20187Networks', 'MIST', 'DiFuMo', 'HarvardOxfordCortical', 'HarvardOxfordCorticalSymmetricSplit', 'HarvardOxfordSubcortical']
+        atlas:
+          [
+            "Schaefer20187Networks",
+            "MIST",
+            "DiFuMo",
+            "HarvardOxfordCortical",
+            "HarvardOxfordCorticalSymmetricSplit",
+            "HarvardOxfordSubcortical",
+          ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -113,7 +118,7 @@ jobs:
     needs: [docker-run]
     defaults:
       run:
-          shell: bash -el {0}
+        shell: bash -el {0}
     if: ${{ github.ref == 'refs/heads/main' || github.ref_type == 'tag' }}
     steps:
       - uses: actions/checkout@v4

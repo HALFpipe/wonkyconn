@@ -36,8 +36,6 @@ test = { features = ["editable", "test"], solve-group = "default" }
 wonkyconn = { features = ["production"], solve-group = "production" }
 
 [tool.pixi.dependencies]
-python = ">=3.11"
-
 numpy = "*"
 scipy = "*"
 patsy = "*"
@@ -68,7 +66,7 @@ datalad = ">=1.0"
 
 [tool.pixi.feature.test.tasks]
 lint = { cmd = "pre-commit run --all-files" }
-test = { cmd = "pytest --cov=wonkyconn --cov-report=xml --pyargs wonkyconn" }
+test = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn" }
 
 [tool.pixi.feature.docs.dependencies]
 sphinx = "*"
@@ -86,10 +84,7 @@ types-tqdm = "*"
 
 [tool.hatch.version]
 source = "vcs"
-fallback-version = "0.0.0+ci" # <-- tmp fallback version for CI
-
-[tool.hatch.version.raw-options]
-local_scheme = "no-local-version"
+fallback-version = "0.0.0+ci" # Fallback version for CI
 
 [tool.hatch.build.hooks.vcs]
 version-file = "wonkyconn/_version.py"
