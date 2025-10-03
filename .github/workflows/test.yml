@@ -36,7 +36,7 @@ jobs:
           environments: test
           frozen: true
       - run: pixi run test
-      # - uses: codecov/codecov-action@v5
-      #   if: ${{ always() }}
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
+      - uses: codecov/codecov-action@v5
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
