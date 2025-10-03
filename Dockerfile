@@ -1,25 +1,39 @@
-#  https://hub.docker.com/layers/library/python/3.9-slim-bullseye/images/sha256-de58dcff6a8ccd752899e667aded074ad3e8f5fd552969ec11276adcb18930a4
-FROM python@sha256:de58dcff6a8ccd752899e667aded074ad3e8f5fd552969ec11276adcb18930a4
+FROM ghcr.io/prefix-dev/pixi:0.53.0 AS build
 
-ARG DEBIAN_FRONTEND="noninteractive"
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update -qq && \
-    apt-get install -y -qq --no-install-recommends \
-        git && \
-    rm -rf /var/lib/apt/lists/*
+# Install dependencies before the package itself to leverage caching
+WORKDIR /app
+COPY pixi.lock pyproject.toml /app/
+RUN --mount=type=cache,target=/root/.cache/rattler \
+    pixi install --environment wonkyconn --environment test --frozen --skip wonkyconn
 
-ARG TEMPLATEFLOW_HOME="/templateflow"
+# Note that PATH gets hard-coded. Remove it and re-apply in final image
+RUN pixi shell-hook --environment wonkyconn --as-is | grep --invert-match PATH > /shell-hook.sh
+RUN pixi shell-hook --environment test --as-is | grep --invert-match PATH > /test-shell-hook.sh
 
-WORKDIR /code
+# Finally, install the package
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/rattler \
+    pixi install --environment wonkyconn --environment test --frozen
 
-COPY [".", "/code"]
+FROM ubuntu:rolling AS base
 
-RUN pip3 install --no-cache-dir pip==24.0 && \
-    pip3 install --no-cache-dir --requirement requirements.txt && \
-    pip3 --no-cache-dir install .
+RUN useradd --create-home --shell /bin/bash --groups users wonkyconn
+WORKDIR /home/wonkyconn
+ENV HOME="/home/wonkyconn"
+FROM base AS test
 
-ENV TEMPLATEFLOW_HOME=${TEMPLATEFLOW_HOME}
+COPY --link --from=build /app/.pixi/envs/test /app/.pixi/envs/test
+RUN --mount=type=bind,from=build,source=/test-shell-hook.sh,target=/shell-hook.sh \
+    cat /shell-hook.sh >> "${HOME}/.bashrc"
+ENV PATH="/app/.pixi/envs/test/bin:$PATH"
 
-RUN git submodule update --init --recursive && python3 /code/tools/download_templates.py
+FROM base AS wonkyconn
 
-ENTRYPOINT ["/usr/local/bin/wonkyconn"]
+COPY --link --from=build /app/.pixi/envs/wonkyconn /app/.pixi/envs/wonkyconn
+RUN --mount=type=bind,from=build,source=/shell-hook.sh,target=/shell-hook.sh \
+    cat /shell-hook.sh >> "${HOME}/.bashrc"
+ENV PATH="/app/.pixi/envs/wonkyconn/bin:$PATH"
+
+ENTRYPOINT ["/app/.pixi/envs/wonkyconn/bin/wonkyconn"]

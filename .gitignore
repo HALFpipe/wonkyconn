@@ -1,5 +1,4 @@
 */_version.py
-*/data/test_data/
 output/
 work/
 wonkyconnenv/
@@ -142,3 +141,6 @@ dmypy.json
 
 #scratch
 seann_scratch.sh
+
+.vscode
+*.ipynb

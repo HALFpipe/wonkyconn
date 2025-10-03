@@ -13,47 +13,78 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-]
-dependencies = [
-  "setuptools",
-  "numpy",
-  "scipy",
-  "patsy",
-  "pandas>=2.0",
-  "rich",
-  "numba",
-  "seaborn",
-  "matplotlib",
-  "statsmodels",
+  "Programming Language :: Python :: 3.13",
 ]
 dynamic = ["version"]
 
 [project.scripts]
 wonkyconn = "wonkyconn.run:main"
 
-[project.optional-dependencies]
-dev = [
-  "black",
-  "flake8",
-  "pre-commit",
-  "wonkyconn[test]",
-  "tox",
-  "mypy",
-  "pandas-stubs",
-  "types-tqdm",
-]
-test = ["nibabel", "nilearn", "pytest", "pytest-cov", "templateflow < 23.0.0"]
-docs = ["sphinx", "sphinx_rtd_theme", "myst-parser", "sphinx-argparse"]
-# Aliases
-tests = ["wonkyconn[test]"]
-
 [project.urls]
 "Homepage" = "https://github.com/SIMEXP/wonkyconn"
 "Documentation" = "https://wonkyconn.readthedocs.io/en/latest/"
 
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.environments]
+default = { features = ["dev", "editable", "test"], solve-group = "default" }
+docs = { features = ["docs"], solve-group = "default" }
+test = { features = ["editable", "test"], solve-group = "default" }
+# Use "wonkyconn" feature for production environment, so it is identifiable
+wonkyconn = { features = ["production"], solve-group = "production" }
+
+[tool.pixi.dependencies]
+numpy = "*"
+scipy = "*"
+patsy = "*"
+pandas = ">=2.0"
+rich = "*"
+numba = "*"
+seaborn = "*"
+matplotlib-base = "*"
+statsmodels = "*"
+tqdm = "*"
+nibabel = "*"
+
+[tool.pixi.feature.editable.pypi-dependencies]
+wonkyconn = { path = ".", editable = true }
+
+[tool.pixi.feature.production.pypi-dependencies]
+wonkyconn = { path = ".", editable = false }
+
+[tool.pixi.feature.test.dependencies]
+nibabel = "*"
+nilearn = "*"
+pytest = "*"
+pytest-cov = "*"
+templateflow = "*"
+
+p7zip = "*"
+datalad = ">=1.0"
+
+[tool.pixi.feature.test.tasks]
+lint = { cmd = "pre-commit run --all-files" }
+test = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn" }
+
+[tool.pixi.feature.docs.dependencies]
+sphinx = "*"
+sphinx_rtd_theme = "*"
+myst-parser = "*"
+sphinx-argparse = "*"
+
+[tool.pixi.feature.dev.dependencies]
+act = ">=0.2.82"
+ruff = "*"
+pre-commit = "*"
+mypy = "*"
+pandas-stubs = "*"
+types-tqdm = "*"
+
 [tool.hatch.version]
 source = "vcs"
-fallback-version = "0.0.0+ci"   # <-- tmp fallback version for CI
+fallback-version = "0.0.0+ci" # Fallback version for CI
 
 [tool.hatch.build.hooks.vcs]
 version-file = "wonkyconn/_version.py"
@@ -63,12 +94,20 @@ exclude = [".git_archival.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["wonkyconn"]
-exclude = [".github", "wonkyconn/data/test_data"]
+exclude = [".github"]
 
-[tool.black]
-target-version = ["py311"]
-exclude = "wonkyconn/_version.py"
-line-length = 151
+[tool.ruff]
+line-length = 127
+
+[tool.ruff.lint]
+select = [
+  "F", # pyflakes
+  "E", # pycodestyle
+  "W", # pycodestyle
+  "I", # isort
+  "B", # bugbears
+  "N", # pep8-naming
+]
 
 [tool.mypy]
 check_untyped_defs = true
@@ -95,7 +134,6 @@ module = [
   "seaborn.*",
   "statsmodels.*",
   "templateflow.*",
-  "pyrsistent.*",
   "nibabel.*",
 ]
 

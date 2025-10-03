@@ -1,13 +1,13 @@
-from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
 from functools import partial
 from pathlib import Path
+from typing import Sequence
+
 import matplotlib
-from matplotlib.axes import Axes
 import matplotlib.patches as mpatches
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-
+from matplotlib.axes import Axes
 
 sns.set_palette("colorblind")
 palette = sns.color_palette(n_colors=7)
@@ -16,7 +16,10 @@ matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
 
 # seann: added type for series
-def _make_group_label(group_by: list[str], values: "pd.Series[str]") -> str:
+def _make_group_label(group_by: list[str], values: str | Sequence[str]) -> str:
+    if isinstance(values, str):
+        values = [values]
+
     label: str = ""
     for a, b in zip(group_by, values, strict=True):
         if label:
@@ -50,6 +53,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         figsize=(26, 4),
         constrained_layout=True,
         sharey=True,
+        dpi=300,
     )
 
     (
@@ -61,46 +65,25 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         legend_axes,
     ) = axes_array
 
-    sns.barplot(
-        y=group_labels,
-        x=data_frame.median_absolute_qcfc,
-        color=palette[0],
-        ax=median_absolute_qcfc_axes,
-    )
+    sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
     median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
     median_absolute_qcfc_axes.set_xlabel("Median absolute value")
     median_absolute_qcfc_axes.set_ylabel("Group")
 
     sns.barplot(
-        y=group_labels,
-        x=data_frame.percentage_significant_qcfc,
-        color=palette[1],
-        ax=percentage_significant_qcfc_axes,
+        y=group_labels, x=data_frame.percentage_significant_qcfc, color=palette[1], ax=percentage_significant_qcfc_axes
     )
     percentage_significant_qcfc_axes.set_title("Percentage of significant QC-FC correlations")
     percentage_significant_qcfc_axes.set_xlabel("Percentage %")
 
-    sns.barplot(
-        y=group_labels,
-        x=data_frame.distance_dependence,
-        color=palette[2],
-        ax=distance_dependence_axes,
-    )
+    sns.barplot(y=group_labels, x=data_frame.distance_dependence, color=palette[2], ax=distance_dependence_axes)
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
     # seann: GCOR visualization with horizontal bars and SEM whiskers
-    gcor_axes.barh(group_labels, data_frame.gcor_mean, color=palette[3])
+    sns.barplot(y=group_labels, x=data_frame.gcor, color=palette[3], ax=gcor_axes)
     gcor_axes.set_title("Global correlation (GCOR)")
     gcor_axes.set_xlabel("Mean correlation")
-    gcor_axes.errorbar(
-        data_frame.gcor_mean,
-        group_labels,
-        xerr=data_frame.gcor_sem,
-        fmt="none",
-        ecolor="black",
-        capsize=3,
-    )
 
     plot_degrees_of_freedom_loss(
         data_frame,
@@ -140,11 +123,7 @@ def plot_degrees_of_freedom_loss(
     )
     degrees_of_freedom_loss_axes.set_title("Percentage of degrees of freedom lost")
     degrees_of_freedom_loss_axes.set_xlabel("Percentage %")
-    labels = [
-        "Confounds regression",
-        "Motion scrubbing",
-        "Non-steady states detector",
-    ]
-    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels)]
+    labels = ["Confounds regression", "Motion scrubbing", "Non-steady states detector"]
+    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels, strict=False)]
     legend_axes.legend(handles=handles)
     legend_axes.axis("off")
