@@ -13,8 +13,8 @@ cd /home/seann/scratch/wonkyconn
 source /home/seann/scratch/wonkyconn/wonkyconnenv/bin/activate
 
 # Define paths
-BIDS_DIR="/Users/seannwang/wonkyconn/wonkyconn/data/test_data/connectome_Schaefer20187Networks_dev"  # Replace with your fMRIPrep output directory
-OUTPUT_DIR="/Users/seannwang/wonkyconn/wonkyconn/wonkyconn_outputs/test1"          # Replace with desired output directory
+BIDS_DIR="/flash/PaoU/seann/wonkyconn/wonkyconn/data/test_data/connectome_Schaefer20187Networks_dev"  # Replace with your fMRIPrep output directory
+OUTPUT_DIR="/flash/PaoU/seann/wonkyconn/wonkyconn/wonkyconn_outputs/test1"          # Replace with desired output directory
 PHENOTYPES="${BIDS_DIR}/participants.tsv"       # Replace with path to your phenotypes file
 ATLAS_PATH="${BIDS_DIR}/atlases/sub-1/func/sub-1_seg-Schaefer20187Networks400Parcels_dseg.nii.gz"  # Replace with path to your atlas
 

@@ -15,6 +15,19 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+dependencies = [
+  "setuptools",
+  "numpy",
+  "scipy",
+  "patsy",
+  "pandas>=2.0",
+  "rich",
+  "numba",
+  "prompt-toolkit>=3.0",
+  "seaborn",
+  "matplotlib",
+  "statsmodels",
+]
 dynamic = ["version"]
 
 [project.scripts]
