@@ -19,6 +19,7 @@ class ConnectivityMatrix:
 
     path: Path
     metadata: dict[str, Any]
+    has_header: bool = False
 
     def load(self) -> npt.NDArray[np.float64]:
         """
@@ -27,7 +28,8 @@ class ConnectivityMatrix:
         Returns:
             ndarray: The loaded connectivity matrix as a NumPy array.
         """
-        return np.loadtxt(self.path, delimiter="\t", skiprows=1)
+        skiprows = 1 if self.has_header else 0
+        return np.loadtxt(self.path, delimiter="\t", skiprows=skiprows)
 
     @cached_property
     def region_count(self) -> int:

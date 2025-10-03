@@ -1,13 +1,13 @@
-from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
 from functools import partial
 from pathlib import Path
+from typing import Sequence
+
 import matplotlib
-from matplotlib.axes import Axes
 import matplotlib.patches as mpatches
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-
+from matplotlib.axes import Axes
 
 sns.set_palette("colorblind")
 palette = sns.color_palette(n_colors=7)
@@ -16,7 +16,10 @@ matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
 
 # seann: added type for series
-def _make_group_label(group_by: list[str], values: "pd.Series[str]") -> str:
+def _make_group_label(group_by: list[str], values: str | Sequence[str]) -> str:
+    if isinstance(values, str):
+        values = [values]
+
     label: str = ""
     value_list = list(values)
     names = list(group_by)
@@ -147,11 +150,7 @@ def plot_degrees_of_freedom_loss(
     )
     degrees_of_freedom_loss_axes.set_title("Percentage of degrees of freedom lost")
     degrees_of_freedom_loss_axes.set_xlabel("Percentage %")
-    labels = [
-        "Confounds regression",
-        "Motion scrubbing",
-        "Non-steady states detector",
-    ]
-    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels)]
+    labels = ["Confounds regression", "Motion scrubbing", "Non-steady states detector"]
+    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels, strict=False)]
     legend_axes.legend(handles=handles)
     legend_axes.axis("off")

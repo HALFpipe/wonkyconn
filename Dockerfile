@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -qq && \
     apt-get install -y -qq --no-install-recommends \
-        git && \
+        git=1:2.30.2-1+deb11u4 && \
     rm -rf /var/lib/apt/lists/*
 
 ARG TEMPLATEFLOW_HOME="/templateflow"

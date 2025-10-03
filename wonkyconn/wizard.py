@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -74,6 +75,113 @@ class WizardConfig:
             debug=self.debug,
             wizard=False,
             wizard_theme=self.wizard_theme,
+        )
+
+    def to_defaults_namespace(self) -> argparse.Namespace:
+        namespace = self.to_namespace()
+        if hasattr(namespace, "wizard"):
+            delattr(namespace, "wizard")
+        return namespace
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "bids_dir": str(self.bids_dir),
+            "output_dir": str(self.output_dir),
+            "analysis_level": self.analysis_level,
+            "phenotypes": str(self.phenotypes),
+            "atlas_label": self.atlas_label,
+            "atlas_path": str(self.atlas_path),
+            "group_by": list(self.group_by),
+            "verbosity": int(self.verbosity),
+            "debug": bool(self.debug),
+            "wizard_theme": self.wizard_theme,
+        }
+
+    def to_file(self, path: Path) -> None:
+        path = Path(path)
+        if path.parent and not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as handle:
+            json.dump(self.to_dict(), handle, indent=2, sort_keys=True)
+            handle.write("\n")
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "WizardConfig":
+        try:
+            atlas_label = payload["atlas_label"]
+            atlas_path = payload["atlas_path"]
+            bids_dir = payload["bids_dir"]
+            output_dir = payload["output_dir"]
+            phenotypes = payload["phenotypes"]
+        except KeyError as exc:  # pragma: no cover - defensive guard
+            raise ValueError(f"Configuration is missing required field: {exc.args[0]}") from exc
+
+        analysis_level = payload.get("analysis_level", "group")
+        group_by_raw = payload.get("group_by", ["seg"])
+        if isinstance(group_by_raw, (str, Path)):
+            group_by = [str(group_by_raw)]
+        else:
+            group_by = [str(item) for item in group_by_raw]
+
+        verbosity_raw = payload.get("verbosity", 2)
+        verbosity = int(verbosity_raw)
+
+        return cls(
+            bids_dir=Path(bids_dir),
+            output_dir=Path(output_dir),
+            analysis_level=str(analysis_level),
+            phenotypes=Path(phenotypes),
+            atlas_label=str(atlas_label),
+            atlas_path=Path(atlas_path),
+            group_by=group_by,
+            verbosity=verbosity,
+            debug=bool(payload.get("debug", False)),
+            wizard_theme=str(payload.get("wizard_theme", "light")),
+        )
+
+    @classmethod
+    def from_file(cls, path: Path) -> "WizardConfig":
+        path = Path(path)
+        with path.open("r", encoding="utf-8") as handle:
+            payload: dict[str, Any] = json.load(handle)
+        return cls.from_dict(payload)
+
+    @classmethod
+    def from_namespace(cls, args: argparse.Namespace) -> "WizardConfig":
+        atlas = getattr(args, "atlas", None)
+        if not isinstance(atlas, (list, tuple)) or len(atlas) != 2:
+            raise ValueError("Namespace is missing atlas label/path pair")
+
+        verbosity_raw = getattr(args, "verbosity", 2)
+        if isinstance(verbosity_raw, list):
+            verbosity = int(verbosity_raw[0]) if verbosity_raw else 2
+        else:
+            verbosity = int(verbosity_raw)
+
+        theme = getattr(args, "wizard_theme", None)
+        wizard_theme = str(theme) if theme else "light"
+
+        group_by_raw = getattr(args, "group_by", None)
+        if isinstance(group_by_raw, (list, tuple)):
+            group_by = [str(item) for item in group_by_raw]
+        elif group_by_raw is None:
+            group_by = ["seg"]
+        else:
+            group_by = [str(group_by_raw)]
+
+        analysis_level = getattr(args, "analysis_level", "group") or "group"
+
+        return cls(
+            bids_dir=Path(getattr(args, "bids_dir")),
+            output_dir=Path(getattr(args, "output_dir")),
+            analysis_level=str(analysis_level),
+            phenotypes=Path(getattr(args, "phenotypes")),
+            atlas_label=str(atlas[0]),
+            atlas_path=Path(atlas[1]),
+            group_by=group_by,
+            verbosity=verbosity,
+            debug=bool(getattr(args, "debug", False)),
+            wizard_theme=wizard_theme,
         )
 
 
@@ -165,8 +273,33 @@ class _MenuItem:
     label: str
 
 
-def collect_configuration(cli_args: argparse.Namespace | None = None) -> argparse.Namespace:
-    defaults = cli_args or argparse.Namespace()
+def collect_configuration(
+    cli_args: argparse.Namespace | None = None,
+    saved_config: WizardConfig | None = None,
+) -> WizardConfig:
+    defaults = argparse.Namespace()
+    if saved_config is not None:
+        for key, value in vars(saved_config.to_defaults_namespace()).items():
+            setattr(defaults, key, value)
+
+    if cli_args is not None:
+        if getattr(cli_args, "bids_dir", None) is not None:
+            defaults.bids_dir = getattr(cli_args, "bids_dir")
+        if getattr(cli_args, "output_dir", None) is not None:
+            defaults.output_dir = getattr(cli_args, "output_dir")
+        if getattr(cli_args, "phenotypes", None) is not None:
+            defaults.phenotypes = getattr(cli_args, "phenotypes")
+        atlas_value = getattr(cli_args, "atlas", None)
+        if atlas_value:
+            defaults.atlas = atlas_value
+        verbosity_value = getattr(cli_args, "verbosity", None)
+        if isinstance(verbosity_value, list):
+            defaults.verbosity = verbosity_value
+        if getattr(cli_args, "debug", False):
+            defaults.debug = True
+        theme_value = getattr(cli_args, "wizard_theme", None)
+        if theme_value:
+            defaults.wizard_theme = theme_value
     gc_log.info("Launching wonkyconn wizard mode")
 
     theme_pref = _normalize_theme(getattr(defaults, "wizard_theme", None))
@@ -264,7 +397,7 @@ def collect_configuration(cli_args: argparse.Namespace | None = None) -> argpars
         raise WizardAbort("user cancelled at confirmation")
 
     gc_log.info("Wizard configuration confirmed")
-    return config.to_namespace()
+    return config
 
 
 def _prompt_value(prompt: str, default: str | Path | None = None) -> str:

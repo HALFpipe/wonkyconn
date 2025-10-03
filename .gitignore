@@ -1,11 +1,13 @@
 */_version.py
-*/data/test_data/
+wonkyconn/data/atlases*
+wonkyconn/data/halfpipe
 output/
 work/
 wonkyconnenv/
 wonkyconn_outputs/
 giga_connectome_outputs/
 local_call_cmds
+wonkyconn/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

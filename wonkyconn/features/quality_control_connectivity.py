@@ -1,4 +1,6 @@
-from __future__ import annotations  # seann: added future import for annotations to allow type hints in function signatures
+from __future__ import (
+    annotations,
+)  # seann: added future import for annotations to allow type hints in function signatures
 
 from itertools import chain
 from typing import Iterable
@@ -28,7 +30,8 @@ def calculate_qcfc(
     accounted for participant age and sex
 
     Parameters:
-        data_frame (pd.DataFrame): The data frame containing the covariates "age" and "gender". It needs to have one row for each connectivity matrix.
+        data_frame (pd.DataFrame): The data frame containing the covariates "age" and "gender".
+                                   It needs to have one row for each connectivity matrix.
         connectivity_matrices (Iterable[ConnectivityMatrix]): The connectivity matrices to calculate QCFC for.
         metric_key (str, optional): The key of the metric to use for QCFC calculation. Defaults to "MeanFramewiseDisplacement".
 
@@ -36,7 +39,11 @@ def calculate_qcfc(
         pd.DataFrame: The QCFC values between connectivity matrices and the metric.
 
     """
-    metrics = np.asarray([connectivity_matrix.metadata.get(metric_key, np.nan) for connectivity_matrix in connectivity_matrices])
+    metrics = np.asarray(
+        [connectivity_matrix.metadata.get(metric_key, np.nan) for connectivity_matrix in connectivity_matrices]
+    )
+    if np.isnan(metrics).all():
+        raise ValueError(f"None of the connectivity matrices have a metric with key '{metric_key}'")
     covariates = np.asarray(dmatrix("age + gender", data_frame))
 
     connectivity_arrays = [
@@ -58,10 +65,8 @@ def calculate_qcfc(
         axis=1,
     )
 
-    _, m = connectivity_array.shape
-    correlation = partial_correlation(connectivity_array, metrics, covariates)
-
-    p_value = correlation_p_value(correlation, m)
+    correlation, count = partial_correlation(connectivity_array, metrics, covariates)
+    p_value = correlation_p_value(correlation, count)
 
     qcfc = pd.DataFrame(dict(i=i, j=j, correlation=correlation, p_value=p_value))
     qcfc = qcfc.set_index(["i", "j"])

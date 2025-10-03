@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
+
 import nibabel as nib
 import numpy as np
-from numpy import typing as npt
 import scipy
+from numpy import typing as npt
 
 from .logger import gc_log
 
@@ -118,4 +119,6 @@ class ProbsegAtlas(Atlas):
         return scipy.ndimage.center_of_mass(array)
 
     def get_centroid_points(self) -> npt.NDArray[np.float64]:
-        return np.asarray([self._get_centroid_point(i, image.get_fdata()) for i, image in enumerate(nib.funcs.four_to_three(self.image))])
+        return np.asarray(
+            [self._get_centroid_point(i, image.get_fdata()) for i, image in enumerate(nib.funcs.four_to_three(self.image))]
+        )
