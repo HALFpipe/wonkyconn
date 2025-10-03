@@ -30,7 +30,7 @@ def global_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "analysis_level",
-        help="Level of the analysis that will be performed. Only grouplevel is available",
+        help="Level of the analysis that will be performed. Only group level is available",
         choices=["group"],
     )
 
@@ -43,14 +43,13 @@ def global_parser() -> argparse.ArgumentParser:
         ),
         required=True,
     )
-    # Fix: --atlas argument only accepts one atlas at a time, replaces --seg-by-atlas
     parser.add_argument(
         "--atlas",
         type=str,
         nargs=2,
+        action="append",
         metavar=("LABEL", "ATLAS_PATH"),
-        required=True,
-        help="Specify the atlas label and the path to the atlas file (e.g. --atlas Schaefer2018 /path/to/atlas.nii.gz)",
+        help="Specify the atlas label and the path to the atlas file (for example --atlas Schaefer2018 /path/to/atlas.nii.gz)",
     )
 
     parser.add_argument("-v", "--version", action="version", version=__version__)
