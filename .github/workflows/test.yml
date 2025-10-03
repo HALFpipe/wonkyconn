@@ -29,6 +29,7 @@ jobs:
       - run: |
           git config --global user.name "halfpipe"
           git config --global user.email "halfpipe@fmri.science"
+          git config --global datalad.runtime.max-annex-jobs "$(nproc)"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

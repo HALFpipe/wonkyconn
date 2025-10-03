@@ -6,8 +6,8 @@ import json
 import re
 from pathlib import Path
 from shutil import copyfile
-from subprocess import check_call
 
+import datalad.api as dl
 import numpy as np
 import pandas as pd
 import pytest
@@ -66,7 +66,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 @pytest.mark.smoke
 def test_giga_connectome(data_path: Path, tmp_path: Path):
     data_path = data_path / "giga_connectome" / "connectome_Schaefer20187Networks_dev"
-    check_call(["datalad", "get", str(data_path)])
+    dl.get(str(data_path))
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
@@ -119,7 +119,7 @@ def test_giga_connectome(data_path: Path, tmp_path: Path):
 @pytest.mark.smoke
 def test_halfpipe(data_path: Path, tmp_path: Path):
     bids_dir = data_path / "halfpipe"
-    check_call(["datalad", "get", str(bids_dir)])
+    dl.get(str(bids_dir))
 
     index = BIDSIndex()
     index.put(bids_dir)
@@ -130,7 +130,7 @@ def test_halfpipe(data_path: Path, tmp_path: Path):
     phenotypes_path = bids_dir / "participants.tsv"
 
     atlas_path = data_path / "atlases"
-    check_call(["datalad", "get", str(atlas_path)])
+    dl.get(str(atlas_path))
 
     atlas_args: list[str] = list()
     atlas_args.append("--atlas")
