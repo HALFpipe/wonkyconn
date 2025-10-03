@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import scipy
-from pkg_resources import resource_filename
 from tqdm.auto import tqdm
 
 from wonkyconn import __version__
@@ -65,8 +64,9 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
 
 
 @pytest.mark.smoke
-def test_giga_connectome(tmp_path: Path):
-    data_path = Path(resource_filename("wonkyconn", "data/giga_connectome/connectome_Schaefer20187Networks_dev"))
+def test_giga_connectome(data_path: Path, tmp_path: Path):
+    data_path = data_path / "giga_connectome" / "connectome_Schaefer20187Networks_dev"
+    check_call(["datalad", "get", str(data_path)])
 
     bids_dir = tmp_path / "bids"
     bids_dir.mkdir()
@@ -117,9 +117,7 @@ def test_giga_connectome(tmp_path: Path):
 
 
 @pytest.mark.smoke
-def test_halfpipe(tmp_path: Path):
-    data_path = Path(resource_filename("wonkyconn", "data"))
-
+def test_halfpipe(data_path: Path, tmp_path: Path):
     bids_dir = data_path / "halfpipe"
     check_call(["datalad", "get", str(bids_dir)])
 
