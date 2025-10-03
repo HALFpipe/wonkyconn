@@ -1,6 +1,4 @@
 */_version.py
-wonkyconn/data/atlases*
-wonkyconn/data/halfpipe
 output/
 work/
 wonkyconnenv/
@@ -143,3 +141,6 @@ dmypy.json
 
 #scratch
 seann_scratch.sh
+
+.vscode
+*.ipynb
