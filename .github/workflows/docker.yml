@@ -64,8 +64,13 @@ jobs:
 
       - run: |
           datalad get data/halfpipe data/atlases
-          docker run --rm --mount="type=bind,source=${{ github.workspace }},target=${{ github.workspace }}" --workdir="${{ github.workspace }}" wonky:conn \
-            data/halfpipe/ test/ group --participants data/halfpipe/participants.tsv --atlas Schaefer2018Combined data/atlases/atlas-Schaefer2018Combined_dseg.nii.gz
+          docker run --rm \
+            --mount="type=bind,source=${{ github.workspace }},target=${{ github.workspace }}" \
+            --workdir="${{ github.workspace }}" \
+            wonky:conn \
+            --phenotypes data/halfpipe/participants.tsv \
+            --atlas Schaefer2018Combined data/atlases/atlas-Schaefer2018Combined_dseg.nii.gz \
+            data/halfpipe test group
 
       - uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20
         # PRs from forks don't have access to secrets, disable this step in that case.
