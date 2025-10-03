@@ -18,6 +18,10 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
 jobs:
   docker-build:
     runs-on: ubuntu-latest
