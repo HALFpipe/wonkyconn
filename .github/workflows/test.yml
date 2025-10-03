@@ -29,6 +29,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Set up environment
+        run: |
+          git config user.name "halfpipe"
+          git config user.email "halfpipe@fmri.science"
       - uses: prefix-dev/setup-pixi@194d461b21b6c5717c722ffc597fa91ed2ff29fa
         with:
           pixi-version: v0.53.0
