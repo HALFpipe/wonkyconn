@@ -36,4 +36,4 @@ RUN --mount=type=bind,from=build,source=/shell-hook.sh,target=/shell-hook.sh \
     cat /shell-hook.sh >> "${HOME}/.bashrc"
 ENV PATH="/app/.pixi/envs/wonkyconn/bin:$PATH"
 
-ENTRYPOINT ["/usr/local/bin/wonkyconn"]
+ENTRYPOINT ["/app/.pixi/envs/wonkyconn/bin/wonkyconn"]
