@@ -28,7 +28,7 @@ def _make_group_label(group_by: list[str], values: str | Sequence[str]) -> str:
     if len(value_list) < len(names):
         value_list += [""] * (len(names) - len(value_list))
 
-    for name, value in zip(names, value_list):
+    for name, value in zip(names, value_list, strict=False):
         if label:
             label += "\n"
         label += f"{name}-{value}"

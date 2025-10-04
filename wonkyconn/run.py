@@ -22,7 +22,7 @@ def global_parser() -> argparse.ArgumentParser:
         type=Path,
         nargs="?",
         default=None,
-        help="The directory with the input dataset (e.g. fMRIPrep derivative)" "formatted according to the BIDS standard.",
+        help="The directory with the input dataset (e.g. fMRIPrep derivative)formatted according to the BIDS standard.",
     )
     parser.add_argument(
         "output_dir",
@@ -123,11 +123,7 @@ def main(argv: None | Sequence[str] = None) -> None:
 
     if missing_positionals or missing_optionals:
         missing = missing_positionals + missing_optionals
-        parser.error(
-            "Missing required arguments: "
-            + ", ".join(missing)
-            + ". Provide them explicitly or run with --wizard."
-        )
+        parser.error("Missing required arguments: " + ", ".join(missing) + ". Provide them explicitly or run with --wizard.")
 
     try:
         _run_with_args(args)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Any, Optional
+from typing import Any, Iterable, Optional
 
-from .logger import gc_log
 from .file_index.bids import BIDSIndex
+from .logger import gc_log
 
 try:  # Optional richer TTY experience
     from prompt_toolkit.application import Application
@@ -15,11 +14,11 @@ try:  # Optional richer TTY experience
     from prompt_toolkit.formatted_text import FormattedText
     from prompt_toolkit.key_binding import KeyBindings
     from prompt_toolkit.layout import Layout
-    from prompt_toolkit.layout.containers import HSplit, Window, FloatContainer, Float
+    from prompt_toolkit.layout.containers import Float, FloatContainer, HSplit, Window
     from prompt_toolkit.layout.controls import FormattedTextControl
     from prompt_toolkit.shortcuts import PromptSession
-    from prompt_toolkit.shortcuts.prompt import CompleteStyle
     from prompt_toolkit.shortcuts.dialogs import input_dialog, yes_no_dialog
+    from prompt_toolkit.shortcuts.prompt import CompleteStyle
     from prompt_toolkit.styles import Style
 
     _PROMPT_TOOLKIT_AVAILABLE = True
@@ -705,11 +704,11 @@ class _PathBrowser:
         if parent != self.current:
             items.append(_MenuItem("go_up", parent, ".. (parent directory)"))
 
-        for directory in directories[: _BROWSER_ENTRY_LIMIT]:
+        for directory in directories[:_BROWSER_ENTRY_LIMIT]:
             items.append(_MenuItem("enter_dir", directory, f"[DIR] {directory.name}/"))
 
         if self.path_type == "file":
-            for file_path in files[: _BROWSER_ENTRY_LIMIT]:
+            for file_path in files[:_BROWSER_ENTRY_LIMIT]:
                 items.append(_MenuItem("choose_file", file_path, file_path.name))
 
         if self.allow_manual:
@@ -824,6 +823,7 @@ class _PathBrowser:
         rendered.append(("class:browser.frame", bottom_line + "\n"))
         rendered.append(("class:browser.background", ""))
         return FormattedText(rendered)
+
 
 def _determine_start_dir(default_path: Path | None, fallback: Path | None) -> Path:
     if default_path is not None:

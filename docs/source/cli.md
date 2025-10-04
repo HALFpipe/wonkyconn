@@ -47,7 +47,7 @@ wonkyconn \
   output/test-run \
   group
 ```
-eg. 
+eg.
 wonkyconn \
   --phenotypes /flash/PaoU/seann/wonkyconn/wonkyconn/data/test_data2/participants.tsv \
   --atlas Schaefer2018Combined /flash/PaoU/seann/wonkyconn/wonkyconn/data/test_data2/atlas/atlas-Schaefer2018Combined_dseg.nii \
