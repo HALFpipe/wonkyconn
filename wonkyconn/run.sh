@@ -27,3 +27,5 @@ wonkyconn ${BIDS_DIR} ${OUTPUT_DIR} group \
     --atlas Schaefer2018400Parcels7Networks ${ATLAS_PATH} \
     --group-by seg desc \
     --verbosity 2
+
+
