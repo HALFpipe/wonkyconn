@@ -25,7 +25,7 @@ wonkyconn = "wonkyconn.run:main"
 "Documentation" = "https://wonkyconn.readthedocs.io/en/latest/"
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "https://conda.fmri.science"]
 platforms = ["linux-64", "osx-arm64"]
 
 [tool.pixi.environments]
@@ -47,6 +47,7 @@ matplotlib-base = "*"
 statsmodels = "*"
 tqdm = "*"
 nibabel = "*"
+brainspace = "*"
 
 [tool.pixi.feature.editable.pypi-dependencies]
 wonkyconn = { path = ".", editable = true }
