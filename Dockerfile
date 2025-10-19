@@ -13,7 +13,8 @@ RUN pixi shell-hook --environment wonkyconn --as-is | grep --invert-match PATH >
 RUN pixi shell-hook --environment test --as-is | grep --invert-match PATH > /test-shell-hook.sh
 
 # Finally, install the package
-COPY . /app
+COPY LICENSE README.md /app/
+COPY wonkyconn/ /app/wonkyconn/
 RUN --mount=type=cache,target=/root/.cache/rattler \
     pixi install --environment wonkyconn --environment test --frozen
 
