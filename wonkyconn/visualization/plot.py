@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 
 sns.set_palette("colorblind")
-palette = sns.color_palette(n_colors=7)
+palette = sns.color_palette(n_colors=9)
 
 matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
@@ -30,27 +30,41 @@ def _make_group_label(group_by: list[str], values: str | Sequence[str]) -> str:
 
 def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> None:
     """
-    Plot all three metrics based on the given result data frame.
+    Plot summary metrics based on the given result data frame.
 
     Args:
-        result_frame (pd.DataFrame): The DataFrame containing the the columns "median_absolute_qcfc",
-            "percentage_significant_qcfc", "distance_dependence", "confound_regression_percentage",
-            "motion_scrubbing_percentage", and "nonsteady_states_detector_percentage", and the
-            columns in the `group_by` variable.
+        result_frame (pd.DataFrame): Must contain columns:
+            - median_absolute_qcfc
+            - percentage_significant_qcfc
+            - distance_dependence
+            - gcor
+            - confound_regression_percentage
+            - motion_scrubbing_percentage
+            - nonsteady_states_detector_percentage
+            - sex_auc
+            - age_mae
+
+            plus the columns listed in group_by (used as index).
         group_by (list[str]): The list of columns that the results are grouped by.
         output_dir (Path): The directory to save the plot image into as "metrics.png".
-
-    Returns:
-        None
     """
     # seann: added type for series
     group_labels: "pd.Series[str]" = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
     data_frame = result_frame.reset_index()
 
+    # We now have 8 panels:
+    # 0  QC-FC median abs
+    # 1  QC-FC % significant
+    # 2  QC-FC distance dependence
+    # 3  GCOR
+    # 4  Sex prediction AUC
+    # 5  Age prediction MAE
+    # 6  DoF loss breakdown
+    # 7  Legend for DoF loss breakdown
     figure, axes_array = plt.subplots(
         nrows=1,
-        ncols=6,
-        figsize=(26, 4),
+        ncols=8,
+        figsize=(34, 4),
         constrained_layout=True,
         sharey=True,
         dpi=300,
@@ -61,36 +75,88 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         percentage_significant_qcfc_axes,
         distance_dependence_axes,
         gcor_axes,
+        sex_auc_axes,
+        age_mae_axes,
         degrees_of_freedom_loss_axes,
         legend_axes,
     ) = axes_array
 
-    sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
-    median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
+    # --- Panel 1: QC-FC median absolute value
+    sns.barplot(
+        y=group_labels,
+        x=data_frame.median_absolute_qcfc,
+        color=palette[0],
+        ax=median_absolute_qcfc_axes,
+    )
+    median_absolute_qcfc_axes.set_title("Median |QC–FC|")
     median_absolute_qcfc_axes.set_xlabel("Median absolute value")
     median_absolute_qcfc_axes.set_ylabel("Group")
 
+    # --- Panel 2: % significant QC-FC
     sns.barplot(
-        y=group_labels, x=data_frame.percentage_significant_qcfc, color=palette[1], ax=percentage_significant_qcfc_axes
+        y=group_labels,
+        x=data_frame.percentage_significant_qcfc,
+        color=palette[1],
+        ax=percentage_significant_qcfc_axes,
     )
-    percentage_significant_qcfc_axes.set_title("Percentage of significant QC-FC correlations")
+    percentage_significant_qcfc_axes.set_title("% significant QC–FC edges")
     percentage_significant_qcfc_axes.set_xlabel("Percentage %")
 
-    sns.barplot(y=group_labels, x=data_frame.distance_dependence, color=palette[2], ax=distance_dependence_axes)
-    distance_dependence_axes.set_title("Distance dependence of QC-FC")
-    distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
+    # --- Panel 3: distance dependence of QC-FC
+    sns.barplot(
+        y=group_labels,
+        x=data_frame.distance_dependence,
+        color=palette[2],
+        ax=distance_dependence_axes,
+    )
+    distance_dependence_axes.set_title("Distance dependence of QC–FC")
+    distance_dependence_axes.set_xlabel("Abs Spearman’s $\\rho$")
 
-    # seann: GCOR visualization with horizontal bars and SEM whiskers
-    sns.barplot(y=group_labels, x=data_frame.gcor, color=palette[3], ax=gcor_axes)
+    # --- Panel 4: GCOR
+    sns.barplot(
+        y=group_labels,
+        x=data_frame.gcor,
+        color=palette[3],
+        ax=gcor_axes,
+    )
     gcor_axes.set_title("Global correlation (GCOR)")
     gcor_axes.set_xlabel("Mean correlation")
 
+    # --- Panel 5: Sex prediction AUC
+    # sex_auc ~ [0.5, 1] si binaire; NaN si trop petit / classe unique
+    if "sex_auc" in data_frame.columns:
+        sns.barplot(
+            y=group_labels,
+            x=data_frame.sex_auc,
+            color=palette[4],
+            ax=sex_auc_axes,
+        )
+        sex_auc_axes.set_title("Sex prediction (AUC)")
+        sex_auc_axes.set_xlabel("AUC (ROC)")
+    else:
+        sex_auc_axes.set_visible(False)
+
+    # --- Panel 6: Age prediction MAE
+    # age_mae = erreur absolue moyenne en années.
+    if "age_mae" in data_frame.columns:
+        sns.barplot(
+            y=group_labels,
+            x=data_frame.age_mae,
+            color=palette[5],
+            ax=age_mae_axes,
+        )
+        age_mae_axes.set_title("Age prediction (MAE)")
+        age_mae_axes.set_xlabel("MAE (years)")
+    else:
+        age_mae_axes.set_visible(False)
+
+    # --- Panel 7: DoF loss breakdown
     plot_degrees_of_freedom_loss(
         data_frame,
         group_labels,
         degrees_of_freedom_loss_axes,
         legend_axes,
-        [palette[4], palette[5], palette[6]],
+        [palette[6], palette[7], palette[8]],
     )
 
     figure.savefig(output_dir / "metrics.png")
@@ -121,9 +187,18 @@ def plot_degrees_of_freedom_loss(
         color=colors[2],
         ax=degrees_of_freedom_loss_axes,
     )
-    degrees_of_freedom_loss_axes.set_title("Percentage of degrees of freedom lost")
+
+    degrees_of_freedom_loss_axes.set_title("Percentage of DoF lost")
     degrees_of_freedom_loss_axes.set_xlabel("Percentage %")
-    labels = ["Confounds regression", "Motion scrubbing", "Non-steady states detector"]
-    handles = [mpatches.Patch(color=c, label=label) for c, label in zip(colors, labels, strict=False)]
+
+    labels = [
+        "Confounds regression",
+        "Motion scrubbing",
+        "Non-steady states detector",
+    ]
+    handles = [
+        mpatches.Patch(color=c, label=label)
+        for c, label in zip(colors, labels, strict=False)
+    ]
     legend_axes.legend(handles=handles)
     legend_axes.axis("off")
