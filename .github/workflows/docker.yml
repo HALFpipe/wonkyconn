@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: mamba-org/setup-micromamba@7f29b8b80078b1b601dfa018b0f7425c587c63bb
+      - uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462
         with:
           condarc: |
             channels:
