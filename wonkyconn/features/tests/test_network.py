@@ -1,6 +1,7 @@
 import json
-import datalad.api as dl
 from pathlib import Path
+
+import datalad.api as dl
 
 from wonkyconn.atlas import Atlas
 from wonkyconn.base import ConnectivityMatrix
