@@ -127,6 +127,7 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 module = [
   "bids.*",
+  "datalad.*"
   "matplotlib.*",
   "numba.*",
   "patsy.*",
@@ -136,6 +137,7 @@ module = [
   "statsmodels.*",
   "templateflow.*",
   "nibabel.*",
+  "nilearn.*"
 ]
 
 [[tool.mypy.overrides]]
