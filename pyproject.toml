@@ -137,7 +137,6 @@ module = [
   "statsmodels.*",
   "templateflow.*",
   "nibabel.*",
-  "nilearn.*",
 ]
 
 [[tool.mypy.overrides]]
