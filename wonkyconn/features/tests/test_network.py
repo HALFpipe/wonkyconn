@@ -1,4 +1,5 @@
 import json
+import datalad.api as dl
 from pathlib import Path
 
 from wonkyconn.atlas import Atlas
@@ -9,6 +10,7 @@ from wonkyconn.tests.conftest import data_path as data_path
 
 def test_single_subject_within_network_connectivity(data_path: Path) -> None:  # noqa: F811
     dseg_path = data_path / "atlases" / "atlas-Schaefer2018Combined_dseg.nii.gz"
+    dl.get(str(dseg_path))
     atlas = Atlas.create("Schaefer2018Combined", dseg_path)
 
     relmat_path = (
