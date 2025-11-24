@@ -1,19 +1,15 @@
 import os
-from joblib import Memory
-import numpy as np
-import pandas as pd
-from sklearn.decomposition import PCA
-from datasets import load_from_disk
-from nilearn.connectome import ConnectivityMeasure
-from sklearn.svm import SVC, SVR
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import cross_validate
-from tqdm import tqdm
-from sklearn.model_selection import cross_val_score
 import time
 
+import numpy as np
+import pandas as pd
+from datasets import load_from_disk
+from nilearn.connectome import ConnectivityMeasure
+from sklearn.decomposition import PCA
+from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit, cross_validate
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.svm import SVC, SVR
 
 # we are using the raw recording features here. All the outputs from 'extract.py should contain it'
 BASELINE_FEAT = "./outputs/brainlm.vitmae_650M.direct_transfer.gigaconnectome"
@@ -23,7 +19,9 @@ def get_baseline_data(timeseries_length=140):
     # load data
     features_direct = load_from_disk(BASELINE_FEAT)
 
-    ts_flatten = [np.array(example).reshape(3, 424, timeseries_length)[0].T.flatten() for example in features_direct["padded_recording"]]
+    ts_flatten = [
+        np.array(example).reshape(3, 424, timeseries_length)[0].T.flatten() for example in features_direct["padded_recording"]
+    ]
 
     correlation_baseline = ConnectivityMeasure(kind="correlation", vectorize=True, discard_diagonal=True)
     ts = [np.array(example).reshape(3, 424, timeseries_length)[0].T for example in features_direct["padded_recording"]]
@@ -32,23 +30,13 @@ def get_baseline_data(timeseries_length=140):
     return ts_flatten, fc, labels
 
 
-import os
-
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-import numpy as np
-import pandas as pd
 from joblib import parallel_backend  # << ajouter
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit, cross_validate
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.decomposition import PCA
-from sklearn.pipeline import Pipeline
-from sklearn.svm import SVC, SVR
 from sklearn.linear_model import LogisticRegression, Ridge
-import time
 
 
 def training_pipeline(X, y, *, n_splits=10, random_state=1, n_pca=100, n_jobs=4, model_type="svm"):
@@ -79,7 +67,11 @@ def training_pipeline(X, y, *, n_splits=10, random_state=1, n_pca=100, n_jobs=4,
             estimator = Ridge(alpha=1.0, random_state=random_state)
         else:  # "svm"
             estimator = SVR()
-        scoring = {"neg_root_mean_squared_error": "neg_root_mean_squared_error", "r2": "r2", "neg_mean_absolute_error": "neg_mean_absolute_error"}
+        scoring = {
+            "neg_root_mean_squared_error": "neg_root_mean_squared_error",
+            "r2": "r2",
+            "neg_mean_absolute_error": "neg_mean_absolute_error",
+        }
         cv = ShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=random_state)
 
     # Pipeline
@@ -94,7 +86,9 @@ def training_pipeline(X, y, *, n_splits=10, random_state=1, n_pca=100, n_jobs=4,
 
     # Cross-validation
     with parallel_backend("threading", n_jobs=n_jobs):
-        out = cross_validate(pipe, X, y, cv=cv, scoring=scoring, n_jobs=n_jobs, return_train_score=False, pre_dispatch="2*n_jobs")
+        out = cross_validate(
+            pipe, X, y, cv=cv, scoring=scoring, n_jobs=n_jobs, return_train_score=False, pre_dispatch="2*n_jobs"
+        )
 
     df_scores = pd.DataFrame({k.replace("test_", ""): v for k, v in out.items() if k.startswith("test_")})
     summary = df_scores.agg(["mean", "std"]).T

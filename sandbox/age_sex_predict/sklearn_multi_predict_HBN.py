@@ -1,29 +1,16 @@
 import os
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from tqdm import tqdm
-from joblib import Memory
-import time
-import matplotlib.pyplot as plt
-
-from sklearn.decomposition import PCA
-from datasets import load_from_disk
-from nilearn.connectome import ConnectivityMeasure
-from sklearn.svm import SVC, SVR
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import cross_validate
 
 ###load arrow/21.0.0!!
-
 import sys
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 sys.path.append("/lustre07/scratch/pbergere/project_predict_sex/usefull_code")
 
 from scikit_pipeline import *
-
 
 path_pheno = "/lustre07/scratch/pbergere/study-HBN_desc-participants.tsv"
 
@@ -73,28 +60,51 @@ def run_benchmark_strategies(list_strats, path_project, *, nroi=431, n_splits=10
             for i, v in enumerate(vals):
                 rows_split.append(dict(strategy=strat, target="age", metric="RMSE", split=i, value=float(v)))
             rows_summary.append(
-                dict(strategy=strat, target="age", metric="RMSE", mean=float(vals.mean()), std=float(vals.std(ddof=1)), n_splits=len(vals))
+                dict(
+                    strategy=strat,
+                    target="age",
+                    metric="RMSE",
+                    mean=float(vals.mean()),
+                    std=float(vals.std(ddof=1)),
+                    n_splits=len(vals),
+                )
             )
         if "neg_mean_absolute_error" in df_scores_age.columns:
             vals = -df_scores_age["neg_mean_absolute_error"].to_numpy()
             for i, v in enumerate(vals):
                 rows_split.append(dict(strategy=strat, target="age", metric="MAE", split=i, value=float(v)))
             rows_summary.append(
-                dict(strategy=strat, target="age", metric="MAE", mean=float(vals.mean()), std=float(vals.std(ddof=1)), n_splits=len(vals))
+                dict(
+                    strategy=strat,
+                    target="age",
+                    metric="MAE",
+                    mean=float(vals.mean()),
+                    std=float(vals.std(ddof=1)),
+                    n_splits=len(vals),
+                )
             )
         if "r2" in df_scores_age.columns:
             vals = df_scores_age["r2"].to_numpy()
             for i, v in enumerate(vals):
                 rows_split.append(dict(strategy=strat, target="age", metric="R2", split=i, value=float(v)))
             rows_summary.append(
-                dict(strategy=strat, target="age", metric="R2", mean=float(vals.mean()), std=float(vals.std(ddof=1)), n_splits=len(vals))
+                dict(
+                    strategy=strat,
+                    target="age",
+                    metric="R2",
+                    mean=float(vals.mean()),
+                    std=float(vals.std(ddof=1)),
+                    n_splits=len(vals),
+                )
             )
 
         # 3) SEX (classification)
         df_scores_sex, _summary_sex = training_pipeline(X, y_sex, n_splits=n_splits, n_pca=n_pca, n_jobs=n_jobs)
 
         sex_metrics = [
-            c for c in df_scores_sex.columns if c in {"accuracy", "roc_auc", "roc_auc_ovr", "f1", "f1_macro", "f1_weighted", "balanced_accuracy"}
+            c
+            for c in df_scores_sex.columns
+            if c in {"accuracy", "roc_auc", "roc_auc_ovr", "f1", "f1_macro", "f1_weighted", "balanced_accuracy"}
         ]
         for m in sex_metrics:
             vals = df_scores_sex[m].to_numpy()
@@ -103,7 +113,14 @@ def run_benchmark_strategies(list_strats, path_project, *, nroi=431, n_splits=10
             for i, v in enumerate(vals):
                 rows_split.append(dict(strategy=strat, target="sex", metric=m_name, split=i, value=float(v)))
             rows_summary.append(
-                dict(strategy=strat, target="sex", metric=m_name, mean=float(vals.mean()), std=float(vals.std(ddof=1)), n_splits=len(vals))
+                dict(
+                    strategy=strat,
+                    target="sex",
+                    metric=m_name,
+                    mean=float(vals.mean()),
+                    std=float(vals.std(ddof=1)),
+                    n_splits=len(vals),
+                )
             )
 
     per_split_df = pd.DataFrame(rows_split).sort_values(["strategy", "target", "metric", "split"]).reset_index(drop=True)
@@ -190,7 +207,9 @@ n_splits = 20
 n_pca = 100
 n_jobs = 4
 
-per_split_df, summary_df = run_benchmark_strategies(list_strats, path_project, nroi=NROI, n_splits=n_splits, n_pca=n_pca, n_jobs=n_jobs)
+per_split_df, summary_df = run_benchmark_strategies(
+    list_strats, path_project, nroi=NROI, n_splits=n_splits, n_pca=n_pca, n_jobs=n_jobs
+)
 
 # Figures
 plot_benchmark_bars(summary_df, save_dir="fig_benchmark", horizontal=True)

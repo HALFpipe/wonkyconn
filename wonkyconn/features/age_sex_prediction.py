@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import warnings
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from joblib import parallel_backend
@@ -10,8 +10,8 @@ from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import (
-    StratifiedShuffleSplit,
     ShuffleSplit,
+    StratifiedShuffleSplit,
     cross_validate,
 )
 from sklearn.pipeline import Pipeline
@@ -22,7 +22,7 @@ from sklearn.svm import SVC, SVR
 # Global caps
 # ---------------------------------------------------------------------
 FIXED_N_SPLITS = 100
-MAX_PCA        = 100
+MAX_PCA = 100
 
 
 # ---------------------------------------------------------------------
@@ -78,13 +78,13 @@ def stack_upper_triangle(connectivity_matrices: List["ConnectivityMatrix"]) -> n
 # Helper: safe PCA dimension
 # ---------------------------------------------------------------------
 def _pca_dim(n_samples: int, n_features: int, requested: int = MAX_PCA) -> int:
-    # FIX: Anticipate that Cross-Validation (test_size=0.2) will reduce 
+    # FIX: Anticipate that Cross-Validation (test_size=0.2) will reduce
     # the number of training samples to roughly 80% of the total.
     n_train_samples = int(n_samples * 0.8)
-    
+
     # Ensure we stay below the training sample limit (-1 for safety)
     safe_limit = max(2, n_train_samples - 1)
-    
+
     dim = min(MAX_PCA, requested, n_features, safe_limit)
     return max(2, dim)
 
@@ -96,8 +96,8 @@ def training_pipeline(
     X: np.ndarray,
     y: np.ndarray,
     *,
-    task_type: str,              # "classification" or "regression" (required)
-    model_type: str,             # "svm" / "logreg" / "ridge"
+    task_type: str,  # "classification" or "regression" (required)
+    model_type: str,  # "svm" / "logreg" / "ridge"
     n_splits: int = FIXED_N_SPLITS,
     random_state: int = 1,
     n_pca: int = MAX_PCA,
@@ -164,16 +164,14 @@ def training_pipeline(
             if report is not None:
                 report.set_note(
                     "sex_cv",
-                    f"extremely small minority class (min_class={min_class}); "
-                    f"using n_splits={k}",
+                    f"extremely small minority class (min_class={min_class}); using n_splits={k}",
                 )
         else:
             if k > min_class:
                 if report is not None:
                     report.set_note(
                         "sex_cv",
-                        f"requested {k} splits > smallest class {min_class}; "
-                        f"using {min_class}",
+                        f"requested {k} splits > smallest class {min_class}; using {min_class}",
                     )
                 k = max(2, min_class)
 
@@ -183,7 +181,7 @@ def training_pipeline(
             random_state=random_state,
         )
 
-        multiclass = (np.unique(y).size > 2)
+        multiclass = np.unique(y).size > 2
         scoring = {
             "accuracy": "accuracy",
             "roc_auc": "roc_auc_ovr" if multiclass else "roc_auc",
@@ -231,12 +229,15 @@ def training_pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
-            ("pca", PCA(
-                n_components=n_components,
-                svd_solver="randomized",
-                iterated_power=3,
-                random_state=random_state,
-            )),
+            (
+                "pca",
+                PCA(
+                    n_components=n_components,
+                    svd_solver="randomized",
+                    iterated_power=3,
+                    random_state=random_state,
+                ),
+            ),
             ("estimator", estimator),
         ]
     )
@@ -255,9 +256,7 @@ def training_pipeline(
             error_score="raise",
         )
 
-    df_scores = pd.DataFrame(
-        {key.replace("test_", ""): v for key, v in out.items() if key.startswith("test_")}
-    )
+    df_scores = pd.DataFrame({key.replace("test_", ""): v for key, v in out.items() if key.startswith("test_")})
     summary = df_scores.agg(["mean", "std"]).T
     summary.columns = ["mean", "std"]
 
@@ -285,8 +284,8 @@ def age_sex_scores(
     random_state: int = 42,
     n_pca: int = MAX_PCA,
     n_jobs: int = 4,
-    clf_model: str = "logreg",   # classification model for sex
-    reg_model: str = "ridge",    # regression model for age
+    clf_model: str = "logreg",  # classification model for sex
+    reg_model: str = "ridge",  # regression model for age
 ) -> Dict[str, float]:
     """
     Compute sex (classification) and age (regression) metrics.

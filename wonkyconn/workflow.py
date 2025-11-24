@@ -15,13 +15,13 @@ from tqdm.auto import tqdm
 
 from .atlas import Atlas
 from .base import ConnectivityMatrix
+from .features.age_sex_prediction import age_sex_scores
 from .features.calculate_degrees_of_freedom import (
     calculate_degrees_of_freedom_loss,
 )
 from .features.calculate_gradients_correlation import calculate_gradients_similarity, extract_gradients
 from .features.distance_dependence import calculate_distance_dependence
 from .features.gcor import calculate_gcor
-from .features.age_sex_prediction import age_sex_scores
 from .features.network import network_similarity
 from .features.quality_control_connectivity import (
     calculate_median_absolute,
@@ -207,7 +207,7 @@ def make_record(
             n_pca=100,
             n_jobs=4,
             clf_model="logreg",  # logistic regression for sex
-            reg_model="ridge",   # ridge regression for age
+            reg_model="ridge",  # ridge regression for age
         )
 
         # scores is:
