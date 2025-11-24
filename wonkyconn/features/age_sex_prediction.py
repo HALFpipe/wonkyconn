@@ -78,7 +78,14 @@ def stack_upper_triangle(connectivity_matrices: List["ConnectivityMatrix"]) -> n
 # Helper: safe PCA dimension
 # ---------------------------------------------------------------------
 def _pca_dim(n_samples: int, n_features: int, requested: int = MAX_PCA) -> int:
-    dim = min(MAX_PCA, requested, n_features, max(2, n_samples - 2))
+    # FIX: Anticipate that Cross-Validation (test_size=0.2) will reduce 
+    # the number of training samples to roughly 80% of the total.
+    n_train_samples = int(n_samples * 0.8)
+    
+    # Ensure we stay below the training sample limit (-1 for safety)
+    safe_limit = max(2, n_train_samples - 1)
+    
+    dim = min(MAX_PCA, requested, n_features, safe_limit)
     return max(2, dim)
 
 
