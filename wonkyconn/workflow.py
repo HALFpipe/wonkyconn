@@ -18,9 +18,11 @@ from .base import ConnectivityMatrix
 from .features.calculate_degrees_of_freedom import (
     calculate_degrees_of_freedom_loss,
 )
+from .features.calculate_gradients_correlation import calculate_gradients_similarity, extract_gradients
 from .features.distance_dependence import calculate_distance_dependence
 from .features.gcor import calculate_gcor
 from .features.age_sex_prediction import age_sex_scores
+from .features.network import network_similarity
 from .features.quality_control_connectivity import (
     calculate_median_absolute,
     calculate_qcfc,
@@ -92,7 +94,6 @@ def workflow(args: argparse.Namespace) -> None:
             gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
             continue
 
-        # Infer NumberOfVolumes if missing
         if "NumberOfVolumes" not in metadata:
             with timeseries_path.open("r") as file_handle:
                 line_count = sum(1 for _ in file_handle)
@@ -100,7 +101,6 @@ def workflow(args: argparse.Namespace) -> None:
                 line_count -= 1
             metadata["NumberOfVolumes"] = line_count
 
-        # Find corresponding connectivity matrices (relmat / matrix)
         relmat_query = query | relmat_base_query | dict(extension=".tsv")
         for relmat_path in index.get(**relmat_query):
             group = Group(*(index.get_tag_value(relmat_path, key) for key in group_by))
@@ -115,10 +115,9 @@ def workflow(args: argparse.Namespace) -> None:
     if not grouped_connectivity_matrix:
         raise ValueError("No groups found")
 
-    # Precompute atlas distance matrices (ROI-ROI distances)
     distance_matrices: dict[str, npt.NDArray[np.float64]] = {seg: atlases[seg].get_distance_matrix() for seg in segs}
+    region_memberships: dict[str, pd.DataFrame] = {seg: atlases[seg].get_yeo7_membership() for seg in segs}
 
-    # For each (group_by) group of subjects, compute metrics
     records: list[dict[str, Any]] = list()
     for key, connectivity_matrices in tqdm(grouped_connectivity_matrix.items(), unit="groups"):
         record = make_record(
@@ -126,10 +125,11 @@ def workflow(args: argparse.Namespace) -> None:
             data_frame,
             connectivity_matrices,
             distance_matrices,
+            region_memberships,
             metric_key,
             seg_key,
+            atlases,
         )
-        # Attach grouping tags (e.g. seg, or feature+atlas)
         record.update(dict(zip(group_by, key, strict=False)))
         records.append(record)
 
@@ -144,8 +144,10 @@ def make_record(
     data_frame: pd.DataFrame,
     connectivity_matrices: list[ConnectivityMatrix],
     distance_matrices: dict[str, npt.NDArray[np.float64]],
+    region_memberships: dict[str, pd.DataFrame],
     metric_key: str,
     seg_key: str,
+    atlases: dict[str, Atlas],
 ) -> dict[str, Any]:
     # seann: added sub- tag when looking up subjects only if sub- is not already present
     seg_subjects: list[str] = list()
@@ -168,29 +170,27 @@ def make_record(
 
     # Slice phenotypes (age, gender, etc.) for just this group
     seg_data_frame = data_frame.loc[seg_subjects]
-
-    # QC-FC: motion vs connectivity
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices, metric_key)
 
-    # Get distance matrix for this atlas / seg
     (seg,) = index.get_tag_values(seg_key, {c.path for c in connectivity_matrices})
     distance_matrix = distance_matrices[seg]
 
     # seann: compute group-level GCOR statistics (mean and SEM)
     gcor = calculate_gcor(connectivity_matrices)
 
-    # Degrees of freedom (scrubbing, nonsteady states, etc.)
-    dof_loss = calculate_degrees_of_freedom_loss(connectivity_matrices)
+    dmn_similarity, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
+    atlas = atlases[seg].image
+    gradients, gradients_group = extract_gradients(connectivity_matrices, atlas)
 
-    # Base QC metrics
-    record: dict[str, Any] = dict(
+    record = dict(
         median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
         distance_dependence=calculate_distance_dependence(qcfc, distance_matrix),
         gcor=gcor,
-        confound_regression_percentage=dof_loss.confound_regression_percentage,
-        motion_scrubbing_percentage=dof_loss.motion_scrubbing_percentage,
-        nonsteady_states_detector_percentage=dof_loss.nonsteady_states_detector_percentage,
+        dmn_similarity=dmn_similarity,
+        dmn_vis_distance_vs_dmn_fpn=t_stats_dmn_vis_fpn,
+        gradients_similarity=calculate_gradients_similarity(gradients, gradients_group),
+        **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
 
     # age / sex predictability metrics

@@ -49,3 +49,8 @@ jobs:
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload generated figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: figures
+          path: figures_artifacts/**/*.png

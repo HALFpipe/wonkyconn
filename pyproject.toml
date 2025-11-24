@@ -127,6 +127,7 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 module = [
   "bids.*",
+  "datalad.*",
   "matplotlib.*",
   "numba.*",
   "patsy.*",
@@ -140,7 +141,7 @@ module = [
 
 [[tool.mypy.overrides]]
 ignore_errors = true
-module = ["wonkyconn.tests.*", "conf"]
+module = ["wonkyconn.tests.*", "conf", "subject-network-overlap"]
 
 [tool.pytest.ini_options]
 markers = [

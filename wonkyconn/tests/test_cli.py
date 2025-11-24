@@ -4,6 +4,7 @@ Simple code to smoke test the functionality.
 
 import json
 import re
+import shutil
 from pathlib import Path
 from shutil import copyfile
 
@@ -39,7 +40,7 @@ def test_help(capsys):
 
 
 def _copy_file(path: Path, new_path: Path, sub: str) -> None:
-    new_path = Path(re.sub(r"sub-\d+", f"sub-{sub}", str(new_path)))
+    new_path = Path(re.sub(r"sub-\d+", sub, str(new_path)))
     new_path.parent.mkdir(parents=True, exist_ok=True)
 
     if "relmat" in path.name and path.suffix == ".tsv":
@@ -104,6 +105,8 @@ def test_giga_connectome(data_path: Path, tmp_path: Path):
         "--phenotypes",
         str(phenotypes_path),
         *atlas_args,
+        "--verbosity",
+        "3",
         str(bids_dir),
         str(output_dir),
         "group",
@@ -150,6 +153,12 @@ def test_halfpipe(data_path: Path, tmp_path: Path):
 
     args = parser.parse_args(argv)
     workflow(args)
+
+    # Add persistent storage to extract figure as artifact
+    persistent_dir = Path("figures_artifacts")
+    persistent_dir.mkdir(exist_ok=True)
+    fig_file = output_dir / "metrics.png"
+    shutil.copy(fig_file, persistent_dir / fig_file.name)
 
     assert (output_dir / "metrics.tsv").is_file()
     assert (output_dir / "metrics.png").is_file()

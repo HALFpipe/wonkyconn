@@ -9,7 +9,10 @@ from templateflow.api import get as get_template
 from wonkyconn.atlas import Atlas
 
 
-def test_dseg_atlas() -> None:
+def test_dseg_atlas(data_path: Path) -> None:
+    # atlas_path = data_path / YEO_NETWORK_MAP
+    # dl.get(str(atlas_path))
+
     url = (
         "https://raw.githubusercontent.com/ThomasYeoLab/CBIG/master/"
         "stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/"
@@ -38,6 +41,9 @@ def test_dseg_atlas() -> None:
     distance_matrix = atlas.get_distance_matrix()
     assert np.abs(_distance_matrix - distance_matrix).mean() < 1  # mm
 
+    region_membership = atlas.get_yeo7_membership()
+    assert region_membership.shape == (400, 7)
+
 
 def _get_centroids(path: Path):
     """
@@ -54,8 +60,11 @@ def _get_centroids(path: Path):
     return centroids
 
 
-def test_probseg_atlas() -> None:
-    "TODO: @haoting wants to revisit this test, to check if the assertion values make sense"
+def test_probseg_atlas(data_path: Path) -> None:
+    # "TODO: @haoting wants to revisit this test, to check if the assertion values make sense"
+    # atlas_path = data_path / YEO_NETWORK_MAP
+    # dl.get(str(atlas_path))
+
     path = get_template(
         template="MNI152NLin2009cAsym",
         atlas="DiFuMo",
@@ -77,3 +86,7 @@ def test_probseg_atlas() -> None:
 
     distance_matrix = atlas.get_distance_matrix()
     assert np.abs(_distance_matrix - distance_matrix).mean() < 50  # mm
+
+    region_membership = atlas.get_yeo7_membership()
+    assert region_membership.shape == (64, 7)
+    assert region_membership.values.sum() == 64

@@ -1,13 +1,19 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from importlib.resources import files
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 import scipy
+from nilearn.image import iter_img, load_img, math_img, resample_to_img  # type: ignore[import-not-found]
+from nilearn.maskers import NiftiLabelsMasker, NiftiMasker  # type: ignore[import-not-found]
 from numpy import typing as npt
 
 from .logger import gc_log
+
+YEO_NETWORK_MAP = "atlases/atlas-Yeo7NetworksMNI152FreeSurferConformed1mmLiberal_dseg.nii.gz"
 
 
 @dataclass
@@ -59,6 +65,28 @@ class Atlas(ABC):
         centroids = self.get_centroids()
         return scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(centroids))
 
+    def load_yeo7_network(self) -> nib.nifti1.Nifti1Image:
+        """
+        Load and resample the yeo 7 networks to the atlas's space.
+
+        Returns:
+            nib.nifti1.Nifti1Image: resampled yeo 7 networks image.
+        """
+        # yeo7_nii = load_img(files("wonkyconn").parent / "data" / YEO_NETWORK_MAP)  # datalad managed directory at root
+        yeo7_nii = load_img(files("wonkyconn") / "data" / YEO_NETWORK_MAP)  # in wonkyconn/data
+        yeo7_nii = list(iter_img(yeo7_nii))[0]  # for some reason there's a fourth dimension
+        yeo7_nii = resample_to_img(yeo7_nii, self.image, interpolation="nearest", copy_header=True, force_resample=True)
+        return yeo7_nii
+
+    @abstractmethod
+    def get_yeo7_membership(self) -> pd.DataFrame:
+        """Get the yeo7 network membership of the atlas.
+
+        Returns:
+            pd.DataFrame: membership of each parcel in shape (number of parcels, 7)
+        """
+        raise NotImplementedError
+
     @staticmethod
     def create(seg: str, path: Path) -> "Atlas":
         """
@@ -106,6 +134,20 @@ class DsegAtlas(Atlas):
             )
         )
 
+    def get_yeo7_membership(self) -> pd.DataFrame:
+        yeo7_nii = self.load_yeo7_network()
+        network_labels = np.unique(yeo7_nii.dataobj)[1:]  # first value (0) is background
+        region_labels = np.unique(self.image.dataobj)[1:]
+        region_membership = pd.DataFrame(0, index=region_labels, columns=[f"yeo7-{int(n)}" for n in network_labels])
+
+        for n in network_labels:
+            cur_region = math_img(f"img=={n}", img=yeo7_nii)
+            masker = NiftiMasker(cur_region)
+            atlas_parcel_in_network = masker.fit_transform(self.image)
+            atlas_parcel_in_network = np.unique(atlas_parcel_in_network)[1:]
+            region_membership.loc[atlas_parcel_in_network, f"yeo7-{int(n)}"] = 1
+        return region_membership
+
 
 @dataclass
 class ProbsegAtlas(Atlas):
@@ -122,3 +164,21 @@ class ProbsegAtlas(Atlas):
         return np.asarray(
             [self._get_centroid_point(i, image.get_fdata()) for i, image in enumerate(nib.funcs.four_to_three(self.image))]
         )
+
+    def get_yeo7_membership(self) -> pd.DataFrame:
+        yeo7_nii = self.load_yeo7_network()
+        network_labels = np.unique(yeo7_nii.dataobj)[1:]  # first value (0) is background
+        region_labels = (np.arange(self.image.shape[-1]) + 1).tolist()  # time is the last dimension in probseg atlas
+        region_membership = pd.DataFrame(0, index=region_labels, columns=[f"yeo7-{int(n)}" for n in network_labels])
+
+        yeo7_masker = NiftiLabelsMasker(yeo7_nii)
+
+        # shape: (number of parcels, 7)
+        # for each parcel, if there's more overlap of one network with the given parcel, we mark the parcel belong to
+        # the network
+        summary_per_network = yeo7_masker.fit_transform(self.image)
+        parcel_membership = (np.argmax(summary_per_network, axis=1) + 1).tolist()
+
+        for region, yeo_network in zip(region_labels, parcel_membership, strict=False):
+            region_membership.loc[region, f"yeo7-{int(yeo_network)}"] = 1
+        return region_membership
