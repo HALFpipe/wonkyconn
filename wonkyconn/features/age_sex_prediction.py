@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import time
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-
 from joblib import parallel_backend
+from nilearn.connectome import sym_matrix_to_vec
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression, Ridge
@@ -17,8 +17,6 @@ from sklearn.model_selection import (
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-
-from nilearn.connectome import sym_matrix_to_vec
 
 # ---------------------------------------------------------------------
 # Global caps
@@ -78,8 +76,8 @@ def training_pipeline(
     X: np.ndarray,
     y: np.ndarray,
     *,
-    task_type: str,              # "classification" or "regression" (required)
-    model_type: str = "default", # Kept for metadata compatibility
+    task_type: str,  # "classification" or "regression" (required)
+    model_type: str = "default",  # Kept for metadata compatibility
     n_splits: int = FIXED_N_SPLITS,
     random_state: int = 1,
     n_pca: int = MAX_PCA,
@@ -233,7 +231,7 @@ def training_pipeline(
         "splits_used": k,
         "splits_requested": n_splits,
         "pca_components": n_components,
-        "model_type": str(estimator), # More accurate than passed string
+        "model_type": str(estimator),  # More accurate than passed string
         "runtime_s": time.time() - start,
     }
 
@@ -252,8 +250,8 @@ def age_sex_scores(
     random_state: int = 42,
     n_pca: int = MAX_PCA,
     n_jobs: int = 4,
-    clf_model: str = "logreg",   # Only used for API compatibility, logic is hardcoded
-    reg_model: str = "ridge",    # Only used for API compatibility, logic is hardcoded
+    clf_model: str = "logreg",  # Only used for API compatibility, logic is hardcoded
+    reg_model: str = "ridge",  # Only used for API compatibility, logic is hardcoded
 ) -> Dict[str, float]:
     """
     Compute sex (classification) and age (regression) metrics.

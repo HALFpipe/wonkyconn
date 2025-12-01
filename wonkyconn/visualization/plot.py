@@ -111,7 +111,6 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     gradients_axes.set_title("Gradient similarity")
     gradients_axes.set_xlabel("Mean similarity (Spearman's $\\rho$)")
 
-
     # --- Sex prediction (AUC) with errorbar (std)
     if "sex_auc" in data_frame.columns:
         sex_auc_axes.barh(

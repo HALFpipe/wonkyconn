@@ -192,7 +192,6 @@ def make_record(
         gradients_similarity=calculate_gradients_similarity(gradients, gradients_group),
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
-    
 
     # age / sex predictability metrics
     try:
@@ -235,9 +234,8 @@ def make_record(
                 age_r2=np.nan,
             )
         )
-        
-    return record
 
+    return record
 
 
 def load_data_frame(args: argparse.Namespace) -> pd.DataFrame:
