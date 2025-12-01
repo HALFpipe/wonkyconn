@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import time
-import warnings
-from typing import Dict, List, Optional
+from typing import List, Dict, Optional
 
 import numpy as np
+import pandas as pd
+
 from joblib import parallel_backend
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
@@ -16,7 +17,8 @@ from sklearn.model_selection import (
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.svm import SVC, SVR
+
+from nilearn.connectome import sym_matrix_to_vec
 
 # ---------------------------------------------------------------------
 # Global caps
@@ -55,26 +57,6 @@ class RunReport:
 
 
 # ---------------------------------------------------------------------
-# Vectorization helper
-# ---------------------------------------------------------------------
-def stack_upper_triangle(connectivity_matrices: List["ConnectivityMatrix"]) -> np.ndarray:
-    if not connectivity_matrices:
-        return np.empty((0, 0), dtype=np.float32)
-
-    n = connectivity_matrices[0].load().shape[0]
-    iu = np.triu_indices(n, 1)
-
-    rows = []
-    for cm in connectivity_matrices:
-        m = cm.load()
-        assert m.shape == (n, n), "All matrices in a group must share the same ROI count."
-        v = m[iu]
-        rows.append(v.astype(np.float32, copy=False))
-
-    return np.vstack(rows)
-
-
-# ---------------------------------------------------------------------
 # Helper: safe PCA dimension
 # ---------------------------------------------------------------------
 def _pca_dim(n_samples: int, n_features: int, requested: int = MAX_PCA) -> int:
@@ -96,8 +78,8 @@ def training_pipeline(
     X: np.ndarray,
     y: np.ndarray,
     *,
-    task_type: str,  # "classification" or "regression" (required)
-    model_type: str,  # "svm" / "logreg" / "ridge"
+    task_type: str,              # "classification" or "regression" (required)
+    model_type: str = "default", # Kept for metadata compatibility
     n_splits: int = FIXED_N_SPLITS,
     random_state: int = 1,
     n_pca: int = MAX_PCA,
@@ -105,14 +87,13 @@ def training_pipeline(
     report: Optional[RunReport] = None,
 ):
     """
-    Run CV with explicit task_type instead of guessing.
+    Run CV with explicit task_type.
+    Models are hardcoded to LogisticRegression (classification) and Ridge (regression).
 
     Returns
     -------
     df_scores, summary, meta
     """
-
-    import pandas as pd  # local import
 
     start = time.time()
     X = np.asarray(X, dtype=np.float32, order="C")
@@ -130,28 +111,18 @@ def training_pipeline(
     )
 
     # -------------------------------------------------
-    # CLASSIFICATION BRANCH (sex)
+    # CLASSIFICATION BRANCH (sex) -> LogisticRegression
     # -------------------------------------------------
     if task_type == "classification":
-        # ----- estimator
-        if model_type == "logreg":
-            # Use saga so n_jobs actually matters.
-            estimator = LogisticRegression(
-                max_iter=5_000,
-                solver="saga",
-                penalty="l2",
-                C=1.0,
-                n_jobs=n_jobs,
-                random_state=random_state,
-            )
-        else:
-            estimator = SVC(
-                C=1.0,
-                class_weight="balanced",
-                kernel="rbf",
-                gamma="scale",
-                probability=True,
-            )
+        # Always use LogisticRegression
+        estimator = LogisticRegression(
+            max_iter=5_000,
+            solver="saga",
+            penalty="l2",
+            C=1.0,
+            n_jobs=n_jobs,
+            random_state=random_state,
+        )
 
         # ----- CV split logic (StratifiedShuffleSplit)
         class_counts = np.bincount(y.astype(int)) if y.size else np.array([0])
@@ -189,14 +160,11 @@ def training_pipeline(
         }
 
     # -------------------------------------------------
-    # REGRESSION BRANCH (age)
+    # REGRESSION BRANCH (age) -> Ridge
     # -------------------------------------------------
     elif task_type == "regression":
-        # ----- estimator
-        if model_type == "ridge":
-            estimator = Ridge(alpha=1.0)
-        else:
-            estimator = SVR()
+        # Always use Ridge
+        estimator = Ridge(alpha=1.0)
 
         # ----- CV split logic (ShuffleSplit)
         if len(y) <= 2:
@@ -265,7 +233,7 @@ def training_pipeline(
         "splits_used": k,
         "splits_requested": n_splits,
         "pca_components": n_components,
-        "model_type": model_type,
+        "model_type": str(estimator), # More accurate than passed string
         "runtime_s": time.time() - start,
     }
 
@@ -284,18 +252,26 @@ def age_sex_scores(
     random_state: int = 42,
     n_pca: int = MAX_PCA,
     n_jobs: int = 4,
-    clf_model: str = "logreg",  # classification model for sex
-    reg_model: str = "ridge",  # regression model for age
+    clf_model: str = "logreg",   # Only used for API compatibility, logic is hardcoded
+    reg_model: str = "ridge",    # Only used for API compatibility, logic is hardcoded
 ) -> Dict[str, float]:
     """
     Compute sex (classification) and age (regression) metrics.
-    Print exactly one concise status line at the end.
+    Models: LogisticRegression (sex) and Ridge (age).
     """
 
     report = RunReport()
 
     # Build X
-    X = stack_upper_triangle(connectivity_matrices)
+    if not connectivity_matrices:
+        X = np.empty((0, 0), dtype=np.float32)
+    else:
+        # IMPORTANT : convertir la liste en ndarray AVANT d'appeler sym_matrix_to_vec
+        mats = np.asarray([cm.load() for cm in connectivity_matrices], dtype=np.float32)
+        X = sym_matrix_to_vec(
+            mats,
+            discard_diagonal=True,
+        ).astype(np.float32)
 
     ages = np.asarray(ages).astype(float, copy=False)
     genders = np.asarray(genders)
@@ -307,14 +283,17 @@ def age_sex_scores(
         requested=n_pca,
     )
 
+    # add std in the output dict
     out: Dict[str, float] = dict(
-        sex_auc=float("nan"),
-        sex_accuracy=float("nan"),
-        age_mae=float("nan"),
-        age_r2=float("nan"),
+        sex_auc=np.nan,
+        sex_auc_std=np.nan,
+        sex_accuracy=np.nan,
+        age_mae=np.nan,
+        age_mae_std=np.nan,
+        age_r2=np.nan,
     )
 
-    # ---- SEX (classification forced)
+    # ---- SEX (classification -> LogisticRegression)
     try:
         _, sum_sex, meta_sex = training_pipeline(
             X,
@@ -327,8 +306,11 @@ def age_sex_scores(
             n_jobs=n_jobs,
             report=report,
         )
+
         if "roc_auc" in sum_sex.index:
             out["sex_auc"] = float(sum_sex.loc["roc_auc", "mean"])
+            out["sex_auc_std"] = float(sum_sex.loc["roc_auc", "std"])
+
         if "accuracy" in sum_sex.index:
             out["sex_accuracy"] = float(sum_sex.loc["accuracy", "mean"])
 
@@ -343,7 +325,7 @@ def age_sex_scores(
     except Exception as exc:
         report.set_sex_error(str(exc))
 
-    # ---- AGE (regression forced)
+    # ---- AGE (regression -> Ridge)
     try:
         _, sum_age, meta_age = training_pipeline(
             X,
@@ -356,9 +338,14 @@ def age_sex_scores(
             n_jobs=n_jobs,
             report=report,
         )
+
         mae_key = "neg_mean_absolute_error"
         if mae_key in sum_age.index:
+            # mean : on remet en positif
             out["age_mae"] = float(-sum_age.loc[mae_key, "mean"])
+            # std : l'écart-type reste positif
+            out["age_mae_std"] = float(sum_age.loc[mae_key, "std"])
+
         if "r2" in sum_age.index:
             out["age_r2"] = float(sum_age.loc["r2", "mean"])
 
@@ -377,11 +364,3 @@ def age_sex_scores(
     print("[age_sex_prediction] " + report.short_summary())
 
     return out
-
-
-# ---------------------------------------------------------------------
-# Optional global warning filters to hide sklearn/numba noise
-# ---------------------------------------------------------------------
-warnings.filterwarnings("ignore", message="divide by zero encountered")
-warnings.filterwarnings("ignore", message="invalid value encountered")
-warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")

@@ -111,24 +111,31 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     gradients_axes.set_title("Gradient similarity")
     gradients_axes.set_xlabel("Mean similarity (Spearman's $\\rho$)")
 
+
+    # --- Sex prediction (AUC) with errorbar (std)
     if "sex_auc" in data_frame.columns:
-        sns.barplot(
+        sex_auc_axes.barh(
             y=group_labels,
-            x=data_frame.sex_auc,
+            width=data_frame.sex_auc,
+            xerr=data_frame.sex_auc_std,
             color=palette[8],
-            ax=sex_auc_axes,
+            ecolor="black",
+            capsize=3,
         )
         sex_auc_axes.set_title("Sex prediction (AUC)")
         sex_auc_axes.set_xlabel("AUC (ROC)")
     else:
         sex_auc_axes.set_visible(False)
 
+    # --- Age prediction (MAE) with errorbar (std)
     if "age_mae" in data_frame.columns:
-        sns.barplot(
+        age_mae_axes.barh(
             y=group_labels,
-            x=data_frame.age_mae,
+            width=data_frame.age_mae,
+            xerr=data_frame.age_mae_std,
             color=palette[9],
-            ax=age_mae_axes,
+            ecolor="black",
+            capsize=3,
         )
         age_mae_axes.set_title("Age prediction (MAE)")
         age_mae_axes.set_xlabel("MAE (years)")

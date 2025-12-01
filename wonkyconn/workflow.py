@@ -192,6 +192,7 @@ def make_record(
         gradients_similarity=calculate_gradients_similarity(gradients, gradients_group),
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
+    
 
     # age / sex predictability metrics
     try:
@@ -213,8 +214,10 @@ def make_record(
         # scores is:
         # {
         #   "sex_auc": float,
+        #   "sex_auc_std": float,
         #   "sex_accuracy": float,
         #   "age_mae": float,
+        #   "age_mae_std": float,
         #   "age_r2": float,
         # }
         record.update(scores)
@@ -225,13 +228,16 @@ def make_record(
         record.update(
             dict(
                 sex_auc=np.nan,
+                sex_auc_std=np.nan,
                 sex_accuracy=np.nan,
                 age_mae=np.nan,
+                age_mae_std=np.nan,
                 age_r2=np.nan,
             )
         )
-
+        
     return record
+
 
 
 def load_data_frame(args: argparse.Namespace) -> pd.DataFrame:
