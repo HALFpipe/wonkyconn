@@ -46,7 +46,7 @@ jobs:
           init-shell: bash
 
       - id: meta
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
         with:
           images: halfpipe/wonkyconn
           tags: |
