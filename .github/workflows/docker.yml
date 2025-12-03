@@ -24,7 +24,7 @@ defaults:
 
 jobs:
   docker-build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Set up environment
         run: |
