@@ -150,22 +150,26 @@ def make_record(
 ) -> dict[str, Any]:
     # seann: added sub- tag when looking up subjects only if sub- is not already present
     seg_subjects: list[str] = list()
+    filtered: list[ConnectivityMatrix] = list()
+
     for c in connectivity_matrices:
         sub = index.get_tag_value(c.path, "sub")
 
         if sub is None:
             raise ValueError(f'Connectivity matrix "{c.path}" does not have a subject tag')
 
-        if sub in data_frame.index:
-            seg_subjects.append(sub)
-            continue
+        # Try both formats
+        candidates = [sub, f"sub-{sub}"]
+        found = next((s for s in candidates if s in data_frame.index), None)
 
-        sub = f"sub-{sub}"
-        if sub in data_frame.index:
-            seg_subjects.append(sub)
-            continue
+        if found:
+            seg_subjects.append(found)
+            filtered.append(c)
+        else:
+            print(f"Skipping subject {sub}: not found in phenotype file.")
 
-        raise ValueError(f"Subject {sub} not found in participants file")
+    #  Renaming for consistency
+    connectivity_matrices[:] = filtered
 
     seg_data_frame = data_frame.loc[seg_subjects]
     qcfc = calculate_qcfc(seg_data_frame, connectivity_matrices, metric_key)
