@@ -23,15 +23,19 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
         height: 1fr;
         padding: 2;
         align: center middle;
+        content-align: center middle;
     }
 
     #intro-card {
         border: solid $accent 20%;
         padding: 2;
         width: 80%;
+        max-width: 90%;
         height: auto;
         text-align: center;
         align: center middle;
+        overflow: auto;
+        content-align: center middle;
     }
 
     #intro-title {
