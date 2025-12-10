@@ -25,6 +25,13 @@ We are currently working towards 0.1.0 release!!!! This is not a stable project 
     --atlas Schaefer20187Networks200Parcels file.nii.gz
   ```
 
+## Textual GUI (optional)
+
+- Install the optional dependency: `pip install "wonkyconn[textual]"`.
+- Launch the GUI instead of running headless: `wonkyconn --textual`.
+- The GUI requires an interactive terminal (TTY). If you are running inside a non-interactive job (for example, on an HPC batch node), run the CLI without `--textual` instead.
+- All required inputs are collected in the GUI; existing CLI defaults and behavior are preserved once you click **Run**.
+
 ## Tasks
 
 - Migrate the code from <https://github.com/SIMEXP/fmriprep-denoise-benchmark>

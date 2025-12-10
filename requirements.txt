@@ -1,0 +1,17 @@
+# Core runtime dependencies
+numpy
+scipy
+patsy
+pandas>=2.0
+rich
+numba
+seaborn
+matplotlib
+statsmodels
+tqdm
+nibabel
+nilearn
+brainspace
+
+# Optional: Textual GUI support
+textual>=0.58
