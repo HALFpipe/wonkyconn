@@ -16,6 +16,21 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dynamic = ["version"]
+dependencies = [
+  "numpy",
+  "scipy",
+  "patsy",
+  "pandas>=2.0",
+  "rich",
+  "numba",
+  "seaborn",
+  "matplotlib",
+  "statsmodels",
+  "tqdm",
+  "nibabel",
+  "nilearn",
+  "brainspace",
+]
 
 [project.scripts]
 wonkyconn = "wonkyconn.run:main"
