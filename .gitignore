@@ -141,8 +141,7 @@ dmypy.json
 
 #scratch
 seann_scratch.sh
-data_new/
-data/
+data*/
 
 .vscode
 *.ipynb
