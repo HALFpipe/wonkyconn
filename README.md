@@ -5,28 +5,9 @@
 
 # wonkyconn
 
-Evaluating the residual motion in fMRI connectome and visualise reports.
+Evaluating the residual motion and analytic insights on fMRI connectome and visualise reports.
 
-We are currently working towards 0.1.0 release!!!! This is not a stable project yet.
+The project is based on the code of [`SIMEXP/fmriprep-denoise-benchmark`](https://github.com/SIMEXP/fmriprep-denoise-benchmark) and the publication by [Wang et al. 2024](http://dx.doi.org/10.1371/journal.pcbi.1011942).
 
-## CLI
+**This project is in alpha stage! This is not a stable project yet.**
 
-- Allow specifying the variables for QC-FC
-
-  Needs to have gender and age
-
-  ```bash
-      --phenotypes file.tsv
-  ```
-
-- Calculate distance dependence based on given BEP17 naming for atlas
-
-  ```bash
-    --atlas Schaefer20187Networks200Parcels file.nii.gz
-  ```
-
-## Tasks
-
-- Migrate the code from <https://github.com/SIMEXP/fmriprep-denoise-benchmark>
-- Add test data
-- Figure out how many confound regressors were used (should this be part of the BIDS metadata)

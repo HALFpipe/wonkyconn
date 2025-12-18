@@ -1,10 +1,16 @@
 # What’s new
 
-## 0.1.0.dev
+## 25.12.0-alpha
 
-**Released MONTH YEAR**
+**Released December 2026**
 
 ### New
+
+This release marks the work started by @HippocampusGirl and @htwangtw in 2024, 
+and later contributions 2025 from 
+@wangseann (testing, CI, UI), 
+@claraElk (gradient similarity metrics, debugging), 
+and @pbergeret12 (prediction on sex and age).
 
 ### Fixes
 
