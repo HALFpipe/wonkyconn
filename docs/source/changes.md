@@ -1,5 +1,18 @@
 # What’s new
 
+## 25.12.1-alpha.dev
+
+**Released MONTH YEAR**
+
+### New
+
+### Fixes
+
+### Enhancements
+
+### Changes
+
+
 ## 25.12.0-alpha
 
 **Released December 2026**
