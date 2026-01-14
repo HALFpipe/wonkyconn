@@ -119,5 +119,9 @@ def network_similarity(
     summary["mean-diff_dmn_fpn"] = summary["mean_yeo7-7"] - summary["mean_yeo7-6"]
 
     mean_corr_with_dmn = summary["corr_with_dmn"].mean()
-    t_stats_dmn_vis_fpn, _ = stats.ttest_rel(summary["mean-diff_dmn_visual"], summary["mean-diff_dmn_fpn"])
+    t_stats_dmn_vis_fpn, _ = stats.ttest_rel(
+        a=summary["mean-diff_dmn_visual"],
+        b=summary["mean-diff_dmn_fpn"],
+        nan_policy="omit",  # NaNs will be omitted when performing the calculation.
+    )
     return np.float64(mean_corr_with_dmn), np.float64(t_stats_dmn_vis_fpn)
