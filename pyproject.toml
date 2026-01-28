@@ -66,6 +66,7 @@ statsmodels = "*"
 tqdm = "*"
 nibabel = "*"
 brainspace = "*"
+textual = "*"
 
 [tool.pixi.feature.editable.pypi-dependencies]
 wonkyconn = { path = ".", editable = true }
