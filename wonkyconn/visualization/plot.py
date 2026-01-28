@@ -59,7 +59,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     figure, axes_array = plt.subplots(
         nrows=1,
         ncols=11,
-        figsize=(36, 4),
+        figsize=(40, 8),
         constrained_layout=True,
         sharey=True,
         dpi=300,
@@ -78,6 +78,10 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         degrees_of_freedom_loss_axes,
         legend_axes,
     ) = axes_array
+
+    # Order for consistency
+    group_labels = group_labels.str.lower()
+    group_labels.sort_values(ascending=True, inplace=True)
 
     sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
     median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
