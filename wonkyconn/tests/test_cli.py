@@ -64,7 +64,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         copyfile(path, new_path)
 
 
-@pytest.mark.smoke
+@pytest.mark.heavy_smoke
 def test_giga_connectome(data_path: Path, tmp_path: Path):
     data_path = data_path / "giga_connectome" / "connectome_Schaefer20187Networks_dev"
     dl.get(str(data_path))
