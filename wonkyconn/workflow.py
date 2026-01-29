@@ -50,6 +50,9 @@ def workflow(args: argparse.Namespace) -> None:
         set_verbosity(args.verbosity)
     gc_log.debug(vars(args))
 
+    # check if light mode is enabled - if so, it will not run the age and sex prediction and gradient similarity
+    disable_prediction_gradient = args.light_mode
+
     # Check BIDS path
     bids_dir = args.bids_dir
     index = BIDSIndex()
@@ -129,6 +132,7 @@ def workflow(args: argparse.Namespace) -> None:
             metric_key,
             seg_key,
             atlases,
+            disable_prediction_gradient,
         )
         record.update(dict(zip(group_by, key, strict=False)))
         records.append(record)
@@ -148,6 +152,7 @@ def make_record(
     metric_key: str,
     seg_key: str,
     atlases: dict[str, Atlas],
+    disable_prediction_gradient: bool,
 ) -> dict[str, Any]:
     # seann: added sub- tag when looking up subjects only if sub- is not already present
     seg_subjects: list[str] = list()
@@ -184,7 +189,6 @@ def make_record(
 
     dmn_similarity, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
     atlas = atlases[seg].image
-    gradients, gradients_group = extract_gradients(connectivity_matrices, atlas)
 
     record = dict(
         median_absolute_qcfc=calculate_median_absolute(qcfc.correlation),
@@ -193,9 +197,26 @@ def make_record(
         gcor=gcor,
         dmn_similarity=dmn_similarity,
         dmn_vis_distance_vs_dmn_fpn=t_stats_dmn_vis_fpn,
-        gradients_similarity=calculate_gradients_similarity(gradients, gradients_group),
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
+
+    if disable_prediction_gradient:
+        gc_log.info("Light mode enabled - skipping age and sex prediction, gradient similarity.")
+        record.update(
+            dict(
+                sex_auc=np.nan,
+                sex_auc_std=np.nan,
+                sex_accuracy=np.nan,
+                age_mae=np.nan,
+                age_mae_std=np.nan,
+                age_r2=np.nan,
+                gradients_similarity=np.nan,
+            )
+        )  # place holders
+        return record
+    # Gradient similarity
+    gradients, gradients_group = extract_gradients(connectivity_matrices, atlas)
+    record["gradients_similarity"] = calculate_gradients_similarity(gradients, gradients_group)
 
     # age / sex predictability metrics
     try:

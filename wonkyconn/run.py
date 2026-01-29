@@ -58,6 +58,9 @@ def global_parser(exit_on_error: bool = True) -> argparse.ArgumentParser:
     parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
+        "--light-mode", action="store_true", default=False, help="Disable sex and age prediction to reduce runtime."
+    )
+    parser.add_argument(
         "--verbosity",
         help="""
         Verbosity level.

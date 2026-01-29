@@ -1,3 +1,5 @@
+name: Tests
+
 on:
   push:
     branches:
@@ -9,7 +11,7 @@ on:
     branches:
       - main
       - maint/*
-    paths: ["wonkyconn/*", "pyproject.toml", "pixi.lock", "Dockerfile"]
+    paths: ["wonkyconn/**", "pyproject.toml", "pixi.lock", "Dockerfile"]
 
 defaults:
   run:
@@ -23,7 +25,25 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      heavy-tests-required: ${{ steps.filter.outputs.heavy-metrics }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            heavy-metrics:
+              - 'wonkyconn/features/calculate_gradients_correlation.py'
+              - 'wonkyconn/features/age_sex_prediction.py'
+              - 'wonkyconn/tests/test_gradients_correlation.py'
+              - 'wonkyconn/tests/test_cli.py'
+
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Set up environment
@@ -44,7 +64,37 @@ jobs:
           cache: true
           environments: test
           frozen: true
-      - run: pixi run test
+      - run: pixi run unittest
+      - run: pixi run smoketestlight
+      - uses: codecov/codecov-action@v5
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  heavy-smoke-tests:
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.heavy-tests-required == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up environment
+        run: |
+          git config --global user.name "halfpipe"
+          git config --global user.email "halfpipe@fmri.science"
+          git config --global datalad.runtime.max-annex-jobs "$(nproc)"
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/templateflow
+          key: templateflow
+      - uses: prefix-dev/setup-pixi@82d477f15f3a381dbcc8adc1206ce643fe110fb7
+        with:
+          pixi-version: v0.53.0
+          cache: true
+          environments: test
+          frozen: true
+      - run: pixi run fulltest
       - uses: codecov/codecov-action@v5
         if: ${{ always() }}
         with:
