@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
 import pandas as pd
 from joblib import parallel_backend  # type: ignore[import-not-found]
 from nilearn.connectome import sym_matrix_to_vec  # type: ignore[import-not-found]
+from numpy.typing import NDArray
 from sklearn.decomposition import PCA  # type: ignore[import-not-found]
 from sklearn.impute import SimpleImputer  # type: ignore[import-not-found]
 from sklearn.linear_model import LogisticRegression, Ridge  # type: ignore[import-not-found]
@@ -13,10 +14,13 @@ from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit, cross_
 from sklearn.pipeline import Pipeline  # type: ignore[import-not-found]
 from sklearn.preprocessing import LabelEncoder, StandardScaler  # type: ignore[import-not-found]
 
+if TYPE_CHECKING:
+    from ..base import ConnectivityMatrix
+
 
 def training_pipeline(
-    connectivity_data: Any,
-    target_labels: Any,
+    connectivity_data: NDArray[np.float32],
+    target_labels: NDArray[np.float64] | NDArray[np.str_],
     task_type: str,
     n_splits: int,
     n_pca: int,
@@ -40,12 +44,12 @@ def training_pipeline(
     connectivity_data = np.asarray(connectivity_data, dtype=np.float32, order="C")
 
     if task_type == "classification":
-        target_labels = LabelEncoder().fit_transform(target_labels)
+        y_train = LabelEncoder().fit_transform(target_labels)
         estimator = LogisticRegression(max_iter=5000, solver="saga", penalty="l2", n_jobs=n_jobs, random_state=random_state)
         cv_strategy = StratifiedShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=random_state)
         scoring_metrics = {"accuracy": "accuracy", "roc_auc": "roc_auc"}
     else:
-        target_labels = np.asarray(target_labels)
+        y_train = np.asarray(target_labels)
         estimator = Ridge(alpha=1.0)
         cv_strategy = ShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=random_state)
         scoring_metrics = {"mae": "neg_mean_absolute_error", "r2": "r2"}
@@ -63,7 +67,7 @@ def training_pipeline(
         cv_results = cross_validate(
             pipe,
             connectivity_data,
-            target_labels,
+            y_train,
             cv=cv_strategy,
             scoring=scoring_metrics,
             n_jobs=n_jobs,
@@ -74,9 +78,9 @@ def training_pipeline(
 
 
 def age_sex_scores(
-    connectivity_matrices: List[Any],
-    ages: Any,
-    genders: Any,
+    connectivity_matrices: List[ConnectivityMatrix],
+    ages: NDArray[np.float64],
+    genders: NDArray[np.str_],
     n_splits: int,
     n_pca: int,
     n_jobs: int = 4,
@@ -85,7 +89,7 @@ def age_sex_scores(
     """Computes age and sex prediction scores via connectivity.
 
     Args:
-        connectivity_matrices (List[Any]): List of matrix objects.
+        connectivity_matrices (List[ConnectivityMatrix]): List of matrix objects.
         ages: Vector of subject ages.
         genders: Vector of subject genders.
         n_splits (int): Number of splits for cross-validation.
