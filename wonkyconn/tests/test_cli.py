@@ -64,7 +64,7 @@ def _copy_file(path: Path, new_path: Path, sub: str) -> None:
         copyfile(path, new_path)
 
 
-@pytest.mark.smoke
+@pytest.mark.heavy_smoke
 def test_giga_connectome(data_path: Path, tmp_path: Path):
     data_path = data_path / "giga_connectome" / "connectome_Schaefer20187Networks_dev"
     dl.get(str(data_path))
@@ -74,7 +74,8 @@ def test_giga_connectome(data_path: Path, tmp_path: Path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    subjects = [f"sub-{i}" for i in ["2", "3", "4", "5", "6", "7"]]
+    # make the number of subject different from the number of atlases
+    subjects = [f"sub-{i}" for i in ["2", "3", "4", "5", "6", "7", "8"]]
 
     paths = list(data_path.glob("**/*"))
     for path in tqdm(paths, desc="Generating test data"):
@@ -107,6 +108,7 @@ def test_giga_connectome(data_path: Path, tmp_path: Path):
         *atlas_args,
         "--verbosity",
         "3",
+        "--light-mode",
         str(bids_dir),
         str(output_dir),
         "group",
@@ -121,6 +123,52 @@ def test_giga_connectome(data_path: Path, tmp_path: Path):
 
 @pytest.mark.smoke
 def test_halfpipe(data_path: Path, tmp_path: Path):
+    bids_dir = data_path / "halfpipe"
+    dl.get(str(bids_dir))
+
+    index = BIDSIndex()
+    index.put(bids_dir)
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    phenotypes_path = bids_dir / "participants.tsv"
+
+    atlas_path = data_path / "atlases"
+    dl.get(str(atlas_path))
+
+    atlas_args: list[str] = list()
+    atlas_args.append("--atlas")
+    atlas_args.append("Schaefer2018Combined")
+    atlas_args.append(str(atlas_path / "atlas-Schaefer2018Combined_dseg.nii.gz"))
+
+    parser = global_parser()
+    # Fix --atlas: changed to use new --atlas argument
+    argv = [
+        "--phenotypes",
+        str(phenotypes_path),
+        *atlas_args,
+        "--light-mode",
+        str(bids_dir),
+        str(output_dir),
+        "group",
+    ]
+
+    args = parser.parse_args(argv)
+    workflow(args)
+
+    # Add persistent storage to extract figure as artifact
+    persistent_dir = Path("figures_artifacts")
+    persistent_dir.mkdir(exist_ok=True)
+    fig_file = output_dir / "metrics.png"
+    shutil.copy(fig_file, persistent_dir / fig_file.name)
+
+    assert (output_dir / "metrics.tsv").is_file()
+    assert (output_dir / "metrics.png").is_file()
+
+
+@pytest.mark.heavy_smoke
+def test_halfpipe_with_full_metrics(data_path: Path, tmp_path: Path):
     bids_dir = data_path / "halfpipe"
     dl.get(str(bids_dir))
 
