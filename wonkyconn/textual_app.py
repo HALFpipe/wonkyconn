@@ -154,15 +154,26 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
             # Required paths
             with Vertical(classes="section"):
                 yield Label("Required paths (click a field to target selection)")
-                yield Button("BIDS directory: (not set)", id="bids_dir_display", variant="default", classes="full-width path-display")
-                yield Button("Output directory: (not set)", id="output_dir_display", variant="default", classes="full-width path-display")
-                yield Button("Phenotypes TSV: (not set)", id="phenotypes_display", variant="default", classes="full-width path-display")
+                yield Button(
+                    "BIDS directory: (not set)", id="bids_dir_display", variant="default", classes="full-width path-display"
+                )
+                yield Button(
+                    "Output directory: (not set)",
+                    id="output_dir_display",
+                    variant="default",
+                    classes="full-width path-display",
+                )
+                yield Button(
+                    "Phenotypes TSV: (not set)", id="phenotypes_display", variant="default", classes="full-width path-display"
+                )
 
             # Atlas
             with Vertical(classes="section"):
                 yield Label("Atlas")
                 yield Input(placeholder="Atlas label (e.g., Schaefer20187Networks400Parcels)", id="atlas_name")
-                yield Button("Atlas path: (not set)", id="atlas_path_display", variant="default", classes="full-width path-display")
+                yield Button(
+                    "Atlas path: (not set)", id="atlas_path_display", variant="default", classes="full-width path-display"
+                )
 
             # Options
             with Vertical(classes="section"):
@@ -178,6 +189,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
                         id="verbosity",
                     )
                     yield Checkbox("Debug", id="debug")
+                    yield Checkbox("Skip age/sex prediction and gradient", id="light_mode")
                     yield Checkbox("Suppress warnings", id="suppress_warnings")
 
             # Run/cancel
@@ -264,6 +276,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
 
         self.query_one("#verbosity", Select).value = str(self.initial_config.verbosity)
         self.query_one("#debug", Checkbox).value = bool(self.initial_config.debug)
+        self.query_one("#light_mode", Checkbox).value = bool(self.initial_config.light_mode)
         self.query_one("#suppress_warnings", Checkbox).value = bool(self.initial_config.suppress_warnings)
 
     def _set_status(self, message: str, error: bool = False) -> None:
@@ -312,6 +325,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
         verbosity_str = self.query_one("#verbosity", Select).value or "2"
         verbosity = int(verbosity_str)
         debug = self.query_one("#debug", Checkbox).value
+        light_mode = self.query_one("#light_mode", Checkbox).value
         suppress_warnings = self.query_one("#suppress_warnings", Checkbox).value
 
         if errors:
@@ -326,6 +340,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
             atlas=[(atlas_label, atlas_path)],
             verbosity=verbosity,
             debug=debug,
+            light_mode=light_mode,
             theme="dark" if self.dark else "light",
             suppress_warnings=suppress_warnings,
         )

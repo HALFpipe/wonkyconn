@@ -135,12 +135,20 @@ def workflow(args: argparse.Namespace) -> None:
             disable_prediction_gradient,
         )
         record.update(dict(zip(group_by, key, strict=False)))
+        record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{record['atlas']}_{record['feature']}.tsv", sep="\t")
         records.append(record)
+
+    plot(records, group_by, output_dir)
+
+    # calculate mean and std for dmn similarity for the summary
+    # for r in records:
+    #     dmn_similarity_std = r["dmn_similarity"].loc[:, "corr_with_dmn"].std()
+    #     dmn_similarity_avg = r["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
+    #     r["dmn_similarity_std"] = dmn_similarity_std
+    #     r["dmn_similarity"] = dmn_similarity_avg
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     result_frame.to_csv(output_dir / "metrics.tsv", sep="\t")
-
-    plot(result_frame, group_by, output_dir)
 
 
 def make_record(
@@ -187,7 +195,7 @@ def make_record(
     # seann: compute group-level GCOR statistics (mean and SEM)
     gcor = calculate_gcor(connectivity_matrices)
 
-    dmn_similarity, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
+    dmn_similarity_summary, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
     atlas = atlases[seg].image
 
     record = dict(
@@ -195,7 +203,7 @@ def make_record(
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
         distance_dependence=calculate_distance_dependence(qcfc, distance_matrix),
         gcor=gcor,
-        dmn_similarity=dmn_similarity,
+        dmn_similarity=dmn_similarity_summary,
         dmn_vis_distance_vs_dmn_fpn=t_stats_dmn_vis_fpn,
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )

@@ -88,7 +88,7 @@ def single_subject_within_network_connectivity(
 
 def network_similarity(
     connectivity_matrices: list[ConnectivityMatrix], region_membership: pd.DataFrame
-) -> Tuple[np.float64, np.float64]:
+) -> Tuple[pd.DataFrame, np.float64]:
     """Calculate network similarity of of default mode network recovered through functional connectivity and Yeo's template.
 
     Args:
@@ -97,7 +97,7 @@ def network_similarity(
         region_membership (pd.DataFrame): Atlas parcel correspondence to Yeo 7 network. Generate throguh the Atlas class.
 
     Returns:
-        Tuple[np.float64, np.float64]: Group level statistics of average correlation with the default mode network and
+        Tuple[pd.DataFrame, np.float64]: Group level statistics of average correlation with the default mode network and
             t-statistics of DMN-FPN distance vs DMN-VIS distance.
     """
     average_connectivity_within_network, std_connectivity_within_network, corr_wtih_dmn = [], [], []
@@ -118,10 +118,10 @@ def network_similarity(
     summary["mean-diff_dmn_visual"] = summary["mean_yeo7-7"] - summary["mean_yeo7-1"]
     summary["mean-diff_dmn_fpn"] = summary["mean_yeo7-7"] - summary["mean_yeo7-6"]
 
-    mean_corr_with_dmn = summary["corr_with_dmn"].mean()
+    # corr_with_dmn = summary["corr_with_dmn"].values.astype(np.float64)
     t_stats_dmn_vis_fpn, _ = stats.ttest_rel(
         a=summary["mean-diff_dmn_visual"],
         b=summary["mean-diff_dmn_fpn"],
         nan_policy="omit",  # NaNs will be omitted when performing the calculation.
     )
-    return np.float64(mean_corr_with_dmn), np.float64(t_stats_dmn_vis_fpn)
+    return summary, np.float64(t_stats_dmn_vis_fpn)

@@ -71,6 +71,7 @@ jobs:
             wonky:conn \
             --phenotypes data/halfpipe/participants.tsv \
             --atlas Schaefer2018Combined data/atlases/atlas-Schaefer2018Combined_dseg.nii.gz \
+            --light-mode \  # always use light mode for testing container since the full version was tested during build
             data/halfpipe test group
 
       - uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
