@@ -135,7 +135,10 @@ def workflow(args: argparse.Namespace) -> None:
             disable_prediction_gradient,
         )
         record.update(dict(zip(group_by, key, strict=False)))
-        record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{record['atlas']}_{record['feature']}.tsv", sep="\t")
+        if len(group_by) == 2:
+            record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{'-'.join(group_by)}.tsv", sep="\t")
+        else:
+            record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{group_by[0]}.tsv", sep="\t")
         records.append(record)
 
     plot(records, group_by, output_dir)
