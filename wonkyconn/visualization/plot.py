@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 import matplotlib.patches as mpatches
@@ -14,7 +15,7 @@ palette = sns.color_palette(n_colors=13)
 matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
 
-def plot(records: list[dict], group_by: list[str], output_dir: Path) -> None:
+def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -> None:
     """
     Plot summary metrics based on the given result data frame.
 
@@ -41,12 +42,15 @@ def plot(records: list[dict], group_by: list[str], output_dir: Path) -> None:
     dmn_sim_array = []
     for record in records:
         df_dmn_similarity = record.pop("dmn_similarity")
-        df_dmn_similarity["atlas"] = record["atlas"]
-        df_dmn_similarity["feature"] = record["feature"]
-        dmn_sim_array.append(df_dmn_similarity[["corr_with_dmn", "atlas", "feature"]])
+        for g in group_by:
+            df_dmn_similarity[g] = record[g]
+        dmn_sim_array.append(df_dmn_similarity[["corr_with_dmn"] + group_by])
 
     df_dmn_sim_array = pd.concat(dmn_sim_array, ignore_index=True)
-    df_dmn_sim_array["group_labels"] = df_dmn_sim_array["atlas"] + "-" + df_dmn_sim_array["feature"]
+    if len(group_by) == 2:
+        df_dmn_sim_array["group_labels"] = df_dmn_sim_array[group_by].apply(lambda x: "-".join(x.astype(str)), axis=1)
+    else:
+        df_dmn_sim_array["group_labels"] = df_dmn_sim_array[group_by[0]]
 
     # summarize the info
     for record, dmn_sim in zip(records, dmn_sim_array, strict=True):
