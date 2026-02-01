@@ -58,7 +58,7 @@ jobs:
         with:
           path: ~/.cache/templateflow
           key: templateflow
-      - uses: prefix-dev/setup-pixi@82d477f15f3a381dbcc8adc1206ce643fe110fb7
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e
         with:
           pixi-version: v0.53.0
           cache: true
@@ -88,7 +88,7 @@ jobs:
         with:
           path: ~/.cache/templateflow
           key: templateflow
-      - uses: prefix-dev/setup-pixi@82d477f15f3a381dbcc8adc1206ce643fe110fb7
+      - uses: prefix-dev/setup-pixi@a0af7a228712d6121d37aba47adf55c1332c9c2e
         with:
           pixi-version: v0.53.0
           cache: true
