@@ -57,7 +57,10 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
         record["dmn_similarity"] = dmn_sim["corr_with_dmn"].mean()
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     data_frame = result_frame.reset_index()
-    data_frame["group_labels"] = data_frame["atlas"] + "-" + data_frame["feature"]
+    if len(group_by) == 2:  # halfpipe
+        data_frame["group_labels"] = data_frame["atlas"] + "-" + data_frame["feature"]
+    else:  # bids connectome
+        data_frame["group_labels"] = data_frame[group_by[0]]
 
     figure, axes_array = plt.subplots(
         nrows=2,
