@@ -23,6 +23,7 @@ class WonkyConnConfig:
     atlas: list[tuple[str, Path]] = field(default_factory=list)
     verbosity: int = 2
     debug: bool = False
+    light_mode: bool = False
     theme: str | None = None  # GUI-only
     suppress_warnings: bool = False
 
@@ -48,6 +49,7 @@ class WonkyConnConfig:
             atlas=atlas_entries,
             verbosity=int(verbosity) if verbosity is not None else 2,
             debug=bool(getattr(args, "debug", False)),
+            light_mode=bool(getattr(args, "light_mode", False)),
             suppress_warnings=bool(getattr(args, "suppress_warnings", False)),
         )
 
@@ -71,4 +73,5 @@ class WonkyConnConfig:
             atlas=list(atlas_as_str),
             verbosity=self.verbosity,
             debug=self.debug,
+            light_mode=self.light_mode,
         )
