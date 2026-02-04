@@ -174,7 +174,7 @@ def make_record(
             seg_subjects.append(found)
             filtered.append(c)
         else:
-            print(f"Skipping subject {sub}: not found in phenotype file.")
+            gc_log.info(f"Skipping subject {sub}: not found in phenotype file.")
 
     #  Renaming for consistency
     connectivity_matrices[:] = filtered

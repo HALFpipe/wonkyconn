@@ -174,7 +174,7 @@ def process_single_matrix(
     group_gradients_np = np.vstack(group_gradients).T  # shape (n_regions, n_components)
 
     # Compute individual gradients
-    gm = GradientMaps(n_components=5, alignment="procrustes", kernel="normalized_angle")
+    gm = GradientMaps(approach="pca", n_components=5, alignment="procrustes", kernel="normalized_angle")
     ind_gradient = gm.fit(masked_matrix, reference=group_gradients_np)
 
     return ind_gradient.aligned_, group_gradients_np
