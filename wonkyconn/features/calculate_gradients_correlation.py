@@ -5,17 +5,19 @@ from typing import Iterable, List, Tuple
 import nibabel as nib
 import numpy as np
 from brainspace.gradient import GradientMaps  # type: ignore[import-not-found]
-from joblib import Parallel, delayed  # type: ignore[import-not-found]
 from nilearn import image  # type: ignore[import-not-found]
+from nilearn.connectome import sym_matrix_to_vec, vec_to_sym_matrix  # type: ignore[import-not-found]
 from nilearn.maskers import NiftiLabelsMasker  # type: ignore[import-not-found]
 from scipy import stats
 
 from ..base import ConnectivityMatrix
+from ..logger import gc_log
 
 
 def remove_nan_from_matrix(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Remove rows/columns from a connectivity matrix that contain NaN values.
+    Checks only the upper triangle (including diagonal) for symmetric matrices.
 
     Parameters
     ----------
@@ -29,8 +31,11 @@ def remove_nan_from_matrix(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     np.ndarray
         Indices of the kept rows/columns.
     """
+    # Get upper triangle (including diagonal)
+    upper_tri = np.triu(matrix, k=0)
 
-    col_mask = ~np.all(np.isnan(matrix), axis=0)
+    # Check for ANY NaN in each column of the upper triangle
+    col_mask = ~np.any(np.isnan(upper_tri), axis=0)
 
     kept_idx = np.where(col_mask)[0]
     conn_clean = matrix[np.ix_(kept_idx, kept_idx)]
@@ -131,8 +136,34 @@ def clean_matrix_from_atlas(matrix: np.ndarray, atlas: nib.Nifti1Image) -> np.nd
         return matrix[np.ix_(indices_to_keep, indices_to_keep)]
 
 
+def group_mean_connectivity(
+    connectivity_matrices: Iterable[ConnectivityMatrix],
+) -> np.ndarray:
+    """
+    Calculate the group mean connectivity matrix from a list of connectivity matrices.
+
+    Parameters
+    ----------
+    connectivity_matrices : Iterable[ConnectivityMatrix]
+        List of connectivity matrices to process.
+
+    Returns
+    -------
+    np.ndarray
+        The group mean connectivity matrix.
+    """
+
+    matrices = [np.asarray(cm.load(), dtype=np.float64) for cm in connectivity_matrices]
+    matrices_vec = [sym_matrix_to_vec(mat, discard_diagonal=False) for mat in matrices]
+
+    mean_vec = np.nanmean(matrices_vec, axis=0)
+    mean_matrix = vec_to_sym_matrix(mean_vec, diagonal=None)
+
+    return mean_matrix
+
+
 def process_single_matrix(
-    connectivity_matrix: ConnectivityMatrix,
+    connectivity_matrix: np.ndarray,
     atlas: nib.Nifti1Image,
     gradient_mask: nib.Nifti1Image,
     gradient_imgs: List[nib.Nifti1Image],
@@ -158,12 +189,21 @@ def process_single_matrix(
         - The individual gradients aligned to group gradients.
         - The group gradients as a NumPy array.
     """
-
-    matrix = np.asarray(connectivity_matrix.load(), dtype=np.float64)
+    matrix = np.asarray(connectivity_matrix, dtype=np.float64)
     conn_clean, kept_idx = remove_nan_from_matrix(matrix)
     atlas_mask_without_nan, _ = remove_nan_roi_atlas(atlas, kept_idx)
+
+    # filter out labels > 400
+    atlas_data = atlas_mask_without_nan.get_fdata()
+    atlas_data[atlas_data > 400] = 0  # Set labels > 400 to background
+    atlas_mask_without_nan = nib.Nifti1Image(atlas_data, atlas_mask_without_nan.affine, atlas_mask_without_nan.header)
+
     masked_atlas = overlapping_atlas_with_mask(atlas_mask_without_nan, gradient_mask)
     masked_matrix = clean_matrix_from_atlas(conn_clean, masked_atlas)
+
+    gc_log.info(f"Kept {len(masked_matrix)} regions after removing subcortical and NaNs.")
+
+    # Create masker
     masker = NiftiLabelsMasker(labels_img=masked_atlas, mask_img=gradient_mask)
 
     # Transform pre-loaded group gradients
@@ -171,6 +211,7 @@ def process_single_matrix(
     for grad_img in gradient_imgs:
         grad_vals = masker.fit_transform(grad_img)  # shape (1, n_regions)
         group_gradients.append(grad_vals.squeeze())
+
     group_gradients_np = np.vstack(group_gradients).T  # shape (n_regions, n_components)
 
     # Compute individual gradients
@@ -183,8 +224,7 @@ def process_single_matrix(
 def extract_gradients(
     connectivity_matrices: Iterable[ConnectivityMatrix],
     atlas: nib.Nifti1Image,
-    n_jobs: int = 4,
-) -> tuple[list[np.ndarray], list[np.ndarray]]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate the gradients for each individual and load group-level gradients
     for alignment.
@@ -209,40 +249,21 @@ def extract_gradients(
     repo_root = Path(__file__).resolve().parent.parent
 
     path_gradients = repo_root / "data" / "gradients"
-    gradient_mask = nib.load(path_gradients / "gradientmask_cortical_subcortical.nii.gz")
+    gradient_mask = nib.load(path_gradients / "gradientmask_cortical.nii.gz")
 
     # Load all group gradient templates
-    gradient_files = sorted(glob.glob(str(path_gradients / "templates" / "gradient*_cortical_subcortical.nii.gz")))
+    gradient_files = sorted(glob.glob(str(path_gradients / "templates" / "gradient*_cortical_only.nii.gz")))
     gradient_imgs = [nib.load(fname) for fname in gradient_files]
 
-    # Parallel processing
-    results = Parallel(n_jobs=n_jobs, verbose=10)(
-        delayed(process_single_matrix)(cm, atlas, gradient_mask, gradient_imgs) for cm in connectivity_matrices
-    )
+    mean_connectome = group_mean_connectivity(connectivity_matrices)
+    gradient_aligned, template_gradient = process_single_matrix(mean_connectome, atlas, gradient_mask, gradient_imgs)
 
-    # Each result is (gradients_i, group_gradients_i)
-    gradients = [r[0] for r in results]
-    group_gradients_list = [r[1] for r in results]
-
-    return gradients, group_gradients_list
-
-
-def calculate_group_gradients_similarity(correlations: List[float]) -> float:
-    """
-    Calculate the mean of a all participant's correlation values.
-
-    Parameters:
-    - correlations (list): A list of correlation values.
-
-    Returns:
-    - float: The mean of the correlation values.
-    """
-    return float(np.mean(correlations))
+    return gradient_aligned, template_gradient
 
 
 def calculate_gradients_similarity(
-    gradients: List[np.ndarray],
-    group_gradients: List[np.ndarray],
+    gradients: np.ndarray,
+    group_gradients: np.ndarray,
 ) -> float:
     """
     Calculate similarity between individual and group gradients via Spearman
@@ -257,27 +278,17 @@ def calculate_gradients_similarity(
 
     Returns
     -------
-    similarities : float
+    similarities : np.ndarray
        Averaged similarity value across subject (mean Fisher-z across components)
     """
-    similarities = []
 
-    for subj_idx, (ind_grad, grp_grad) in enumerate(zip(gradients, group_gradients, strict=True)):
-        if np.array(ind_grad).shape != grp_grad.shape:
-            raise ValueError(
-                f"Shape mismatch for subject {subj_idx}: individual {np.array(ind_grad).shape} vs group {grp_grad.shape}"
-            )
+    n_components = gradients.shape[1]
 
-        n_components = ind_grad.shape[1]
+    # Spearman correlation over components
+    rho_list = []
+    for comp in range(n_components):
+        r, _ = stats.spearmanr(gradients[:, comp], group_gradients[:, comp])
+        rho_list.append(r)
 
-        # Spearman correlation over components
-        rho_list = []
-        for comp in range(n_components):
-            r, _ = stats.spearmanr(ind_grad[:, comp], grp_grad[:, comp])
-            rho_list.append(r)
-
-        # Fisher r-to-z transform, mean over components
-        z_mean = np.mean(np.arctanh(rho_list))
-        similarities.append(z_mean)
-
-    return calculate_group_gradients_similarity(similarities)
+    # Fisher r-to-z transform, mean over components
+    return float(np.mean(np.arctanh(rho_list)))
