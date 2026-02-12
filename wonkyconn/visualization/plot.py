@@ -79,10 +79,6 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         legend_axes,
     ) = axes_array
 
-    # Order for consistency
-    group_labels = group_labels.str.lower()
-    group_labels.sort_values(ascending=True, inplace=True)
-
     sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
     median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
     median_absolute_qcfc_axes.set_xlabel("Median absolute value")
