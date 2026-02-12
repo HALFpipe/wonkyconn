@@ -282,7 +282,7 @@ def calculate_gradients_similarity(
        Averaged similarity value across subject (mean Fisher-z across components)
     """
 
-    n_components = gradients.shape[1]
+    n_components = 3
 
     # Spearman correlation over components
     rho_list = []
