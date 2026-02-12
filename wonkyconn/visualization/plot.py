@@ -59,7 +59,7 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
     figure, axes_array = plt.subplots(
         nrows=1,
         ncols=11,
-        figsize=(36, 4),
+        figsize=(40, 8),
         constrained_layout=True,
         sharey=True,
         dpi=300,
