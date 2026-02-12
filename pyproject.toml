@@ -16,6 +16,21 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dynamic = ["version"]
+dependencies = [
+  "numpy",
+  "scipy",
+  "patsy",
+  "pandas>=2.0",
+  "rich",
+  "numba",
+  "seaborn",
+  "matplotlib",
+  "statsmodels",
+  "tqdm",
+  "nibabel",
+  "nilearn",
+  "brainspace",
+]
 
 [project.scripts]
 wonkyconn = "wonkyconn.run:main"
@@ -23,6 +38,9 @@ wonkyconn = "wonkyconn.run:main"
 [project.urls]
 "Homepage" = "https://github.com/SIMEXP/wonkyconn"
 "Documentation" = "https://wonkyconn.readthedocs.io/en/latest/"
+
+[project.optional-dependencies]
+textual = ["textual>=0.58"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge", "https://conda.fmri.science"]
@@ -48,6 +66,7 @@ statsmodels = "*"
 tqdm = "*"
 nibabel = "*"
 brainspace = "*"
+textual = "*"
 
 [tool.pixi.feature.editable.pypi-dependencies]
 wonkyconn = { path = ".", editable = true }
@@ -67,7 +86,9 @@ datalad = ">=1.0"
 
 [tool.pixi.feature.test.tasks]
 lint = { cmd = "pre-commit run --all-files" }
-test = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn" }
+unittest = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn -m 'not heavy_smoke and not smoke'" }
+fulltest = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn -m 'not smoke'" }  # only run the heavy smoke tests
+smoketestlight = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn -m smoke" }  # only run the light smoke tests
 
 [tool.pixi.feature.docs.dependencies]
 sphinx = "*"
@@ -82,6 +103,7 @@ pre-commit = "*"
 mypy = "*"
 pandas-stubs = "*"
 types-tqdm = "*"
+textual = "*"
 
 [tool.hatch.version]
 source = "vcs"
@@ -146,6 +168,7 @@ module = ["wonkyconn.tests.*", "conf", "subject-network-overlap"]
 [tool.pytest.ini_options]
 markers = [
   "smoke: smoke tests that will run on a simulated dataset (deselect with '-m \"not smoke\"')",
+  "heavy_smoke: smoke tests that will with the prediction and gradient metrics (deselect with '-m \"not heavy_smoke\"')",
 ]
 # filterwarnings = ["error"]
 minversion = "7"
