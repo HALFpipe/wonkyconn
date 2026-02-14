@@ -51,10 +51,10 @@ def workflow(args: argparse.Namespace) -> None:
     gc_log.debug(vars(args))
 
     # check if light mode is enabled - if so, it will not run the age and sex prediction and gradient similarity
-    # patch: currently, the textual app doesn't have the light mode flag, 
+    # patch: currently, the textual app doesn't have the light mode flag,
     # always run the full app with texture app
-    disable_prediction_gradient = getattr(args, 'light_mode', False) 
-        
+    disable_prediction_gradient = getattr(args, "light_mode", False)
+
     # Check BIDS path
     bids_dir = args.bids_dir
     index = BIDSIndex()
@@ -141,16 +141,18 @@ def workflow(args: argparse.Namespace) -> None:
             record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{'-'.join(group_by)}.tsv", sep="\t")
         else:
             record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{group_by[0]}.tsv", sep="\t")
+
+        dmn_similarity_std = record["dmn_similarity"].loc[:, "corr_with_dmn"].std()
+        dmn_similarity_avg = record["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
+        record["dmn_similarity_std"] = dmn_similarity_std
+        record["dmn_similarity_mean"] = dmn_similarity_avg
+
         records.append(record)
 
     plot(records, group_by, output_dir)
 
-    # calculate mean and std for dmn similarity for the summary
-    for r in records:
-        dmn_similarity_std = r["dmn_similarity"].loc[:, "corr_with_dmn"].std()
-        dmn_similarity_avg = r["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
-        r["dmn_similarity_std"] = dmn_similarity_std
-        r["dmn_similarity"] = dmn_similarity_avg
+    for record in records:
+        record.pop("dmn_similarity")
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     result_frame.to_csv(output_dir / "metrics.tsv", sep="\t")
@@ -218,10 +220,12 @@ def make_record(
         record.update(
             dict(
                 sex_auc=np.nan,
-                sex_auc_std=np.nan,
+                sex_auc_ci_lower=np.nan,
+                sex_auc_ci_upper=np.nan,
                 sex_accuracy=np.nan,
                 age_mae=np.nan,
-                age_mae_std=np.nan,
+                age_mae_ci_lower=np.nan,
+                age_mae_ci_upper=np.nan,
                 age_r2=np.nan,
                 gradients_similarity=np.nan,
             )
@@ -240,21 +244,21 @@ def make_record(
             connectivity_matrices,
             ages=ages,
             genders=genders,
-            n_splits=100,
+            n_splits=20,
             random_state=42,
             n_pca=100,
             n_jobs=4,
-            clf_model="logreg",  # logistic regression for sex
-            reg_model="ridge",  # ridge regression for age
         )
 
         # scores is:
         # {
         #   "sex_auc": float,
-        #   "sex_auc_std": float,
+        #   "sex_auc_ci_lower": float,
+        #   "sex_auc_ci_upper": float,
         #   "sex_accuracy": float,
         #   "age_mae": float,
-        #   "age_mae_std": float,
+        #   "age_mae_ci_lower": float,
+        #   "age_mae_ci_upper": float,
         #   "age_r2": float,
         # }
         record.update(scores)
@@ -265,10 +269,12 @@ def make_record(
         record.update(
             dict(
                 sex_auc=np.nan,
-                sex_auc_std=np.nan,
+                sex_auc_ci_lower=np.nan,
+                sex_auc_ci_upper=np.nan,
                 sex_accuracy=np.nan,
                 age_mae=np.nan,
-                age_mae_std=np.nan,
+                age_mae_ci_lower=np.nan,
+                age_mae_ci_upper=np.nan,
                 age_r2=np.nan,
             )
         )

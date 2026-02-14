@@ -138,6 +138,8 @@ dmypy.json
 .pyre/
 
 *.code-workspace
+.DS_Store
+pixi.lock
 
 #scratch
 seann_scratch.sh
@@ -145,4 +147,3 @@ data*/
 
 .vscode
 *.ipynb
-

@@ -39,7 +39,7 @@ def training_pipeline(
         random_state (int): Seed for reproducibility.
 
     Returns:
-        pd.DataFrame: Statistics (mean, std) of the scores obtained.
+        pd.DataFrame: Statistics (mean, 95% CI) of the scores obtained.
     """
     connectivity_data = np.asarray(connectivity_data, dtype=np.float32, order="C")
 
@@ -74,7 +74,10 @@ def training_pipeline(
         )
 
     scores_df = pd.DataFrame({k.replace("test_", ""): v for k, v in cv_results.items() if k.startswith("test_")})
-    return scores_df.agg(["mean", "std"]).T
+    summary = scores_df.agg(["mean"]).T
+    summary["ci_lower"] = scores_df.quantile(0.025)
+    summary["ci_upper"] = scores_df.quantile(0.975)
+    return summary
 
 
 def age_sex_scores(
@@ -125,9 +128,11 @@ def age_sex_scores(
 
     return {
         "sex_auc": float(sex_summary.loc["roc_auc", "mean"]),  # type: ignore[arg-type]
-        "sex_auc_std": float(sex_summary.loc["roc_auc", "std"]),  # type: ignore[arg-type]
+        "sex_auc_ci_lower": float(sex_summary.loc["roc_auc", "ci_lower"]),  # type: ignore[arg-type]
+        "sex_auc_ci_upper": float(sex_summary.loc["roc_auc", "ci_upper"]),  # type: ignore[arg-type]
         "sex_accuracy": float(sex_summary.loc["accuracy", "mean"]),  # type: ignore[arg-type]
         "age_mae": float(-age_summary.loc["mae", "mean"]),  # type: ignore[arg-type, operator]
-        "age_mae_std": float(age_summary.loc["mae", "std"]),  # type: ignore[arg-type]
+        "age_mae_ci_lower": float(-age_summary.loc["mae", "ci_upper"]),  # type: ignore[arg-type, operator]
+        "age_mae_ci_upper": float(-age_summary.loc["mae", "ci_lower"]),  # type: ignore[arg-type, operator]
         "age_r2": float(age_summary.loc["r2", "mean"]),  # type: ignore[arg-type]
     }

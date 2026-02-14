@@ -1,93 +1,30 @@
 # Outputs
 
-The output of this app aims to follow the guideline
-of the [BIDS extension proposal 17 - Generic BIDS connectivity data schema](https://bids.neuroimaging.io/bep017).
+Wonkyconn performs group-level analysis and writes the following files to the output directory.
 
-Metadata files content is described in this BIDS extension proposal.
+## `metrics.tsv`
 
-## Participant level
+A tab-separated file containing group-level quality control and connectivity metrics, indexed by the grouping variable (e.g. atlas segmentation). Columns include:
 
-For each participant that was passed to `--participant_label`
-(or all participants under `bids_dir` if no `--participant_label` is passed),
-the output will be save in `sub-<participant_id>/[ses-<ses_id>]/func`.
+- `median_absolute_qcfc` — Median absolute QC-FC correlation across edges.
+- `percentage_significant_qcfc` — Percentage of edges with significant QC-FC correlation.
+- `distance_dependence` — Correlation between QC-FC values and inter-node distance.
+- `gcor` — Global correlation (mean and SEM across subjects).
+- `dmn_vis_distance_vs_dmn_fpn` — Paired t-statistic comparing DMN–visual vs DMN–FPN mean connectivity distance.
+- `dmn_similarity_mean` — Mean correlation of individual connectivity patterns with the DMN template.
+- `dmn_similarity_std` — Standard deviation of the DMN similarity across subjects.
+- `degrees_of_freedom_loss_mean` — Mean degrees of freedom lost to denoising.
+- `degrees_of_freedom_loss_std` — Standard deviation of degrees of freedom loss.
+- `sex_auc` — AUC for sex classification from connectivity (with CI bounds).
+- `sex_accuracy` — Accuracy for sex classification.
+- `age_mae` — Mean absolute error for age prediction from connectivity (with CI bounds).
+- `age_r2` — R² for age prediction.
+- `gradients_similarity` — Similarity of group-level connectivity gradients to a reference.
 
-### Data files
+## `metrics.png`
 
-For each input image (that is, preprocessed BOLD time series)
-and each atlas the following data files will be generated
+A summary visualization of the group-level metrics.
 
-- a `[matches]_atlas-{atlas}_meas-PearsonCorrelation_desc-{atlas_description}{denoise_strategy}_relmat.tsv`
-  file that contains the correlation matrix between all the regions of the atlas
-- a `[matches]_atlas-{atlas}_meas-PearsonCorrelation_desc-{atlas description}{denoise_strategy}_timeseries.tsv`
-  file that contains the extracted timeseries for each region of the atlas
+## `dmn_similarity_*.tsv`
 
-- `{atlas}` refers to the name of the atlas used (for example, `Schaefer20187Networks`)
-- `{atlas_description}` refers to the sub type of atlas used (for example, `100Parcels7Networks`)
-- `{denoise_strategy}` refers to the denoise strategy passed to the command line
-
-### Metadata
-
-A JSON file is generated in the root of the output dataset (`meas-PearsonCorrelation_relmat.json`)
-that contains metadata applicable to all `relmat.tsv` files.
-
-For each input image (that is, preprocessed BOLD time series)
-a `[matches]_atlas-{atlas}_timeseries.json`
-
-### Example
-
-```
-├── dataset_description.json
-├── logs
-│   └── CITATION.md
-├── meas-PearsonCorrelation_relmat.json
-├── sub-1
-│   ├── ses-timepoint1
-│   │   └── func
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-│   │       ├── sub-1_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-│   │       └── sub-1_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-│   └── ses-timepoint2
-│       └── func
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-│           ├── sub-1_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-│           └── sub-1_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-└── sub-2
-    ├── ses-timepoint1
-    │   └── func
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-    │       ├── sub-2_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-    │       └── sub-2_ses-timepoint1_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-    └── ses-timepoint2
-        └── func
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-01_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-100Parcels7NetworksSimple_timeseries.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_desc-200Parcels7NetworksSimple_timeseries.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-100Parcels7NetworksSimple_relmat.tsv
-            ├── sub-2_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_meas-PearsonCorrelation_desc-200Parcels7NetworksSimple_relmat.tsv
-            └── sub-2_ses-timepoint2_task-probabilisticclassification_run-02_space-MNI152NLin2009cAsym_res-2_atlas-Schaefer20187Networks_timeseries.json
-```
+Per-subject DMN similarity statistics, including within-network mean connectivity, standard deviation, and correlation with the DMN template for each Yeo 7 network.

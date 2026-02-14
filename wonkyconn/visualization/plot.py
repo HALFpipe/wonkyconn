@@ -3,6 +3,7 @@ from typing import Any
 
 import matplotlib
 import matplotlib.patches as mpatches
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -58,7 +59,7 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     data_frame = result_frame.reset_index()
     if len(group_by) == 2:  # halfpipe
-        data_frame["group_labels"] = data_frame["atlas"] + "-" + data_frame["feature"]
+        data_frame["group_labels"] = data_frame[group_by].apply(lambda x: "-".join(x.astype(str)), axis=1)
     else:  # bids connectome
         data_frame["group_labels"] = data_frame[group_by[0]]
 
@@ -66,7 +67,6 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
         nrows=2,
         ncols=6,
         figsize=(27, 9),
-
         constrained_layout=True,
         sharey=True,
         dpi=300,
@@ -126,12 +126,18 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
     gradients_axes.set_title("Gradient similarity")
     gradients_axes.set_xlabel("Mean similarity (Spearman's $\\rho$)")
 
-    # --- Sex prediction (AUC) with errorbar (std)
+    # --- Sex prediction (AUC) with errorbar (95% CI)
     if "sex_auc" in data_frame.columns:
+        sex_auc_ci = np.array(
+            [
+                data_frame.sex_auc - data_frame.sex_auc_ci_lower,
+                data_frame.sex_auc_ci_upper - data_frame.sex_auc,
+            ]
+        )
         sex_auc_axes.barh(
             y=data_frame.group_labels,
             width=data_frame.sex_auc,
-            xerr=data_frame.sex_auc_std,
+            xerr=sex_auc_ci,
             color=palette[8],
             ecolor="black",
             capsize=3,
@@ -141,12 +147,18 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
     else:
         sex_auc_axes.set_visible(False)
 
-    # --- Age prediction (MAE) with errorbar (std)
+    # --- Age prediction (MAE) with errorbar (95% CI)
     if "age_mae" in data_frame.columns:
+        age_mae_ci = np.array(
+            [
+                data_frame.age_mae - data_frame.age_mae_ci_lower,
+                data_frame.age_mae_ci_upper - data_frame.age_mae,
+            ]
+        )
         age_mae_axes.barh(
             y=data_frame.group_labels,
             width=data_frame.age_mae,
-            xerr=data_frame.age_mae_std,
+            xerr=age_mae_ci,
             color=palette[9],
             ecolor="black",
             capsize=3,
