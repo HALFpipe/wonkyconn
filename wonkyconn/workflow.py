@@ -146,11 +146,11 @@ def workflow(args: argparse.Namespace) -> None:
     plot(records, group_by, output_dir)
 
     # calculate mean and std for dmn similarity for the summary
-    # for r in records:
-    #     dmn_similarity_std = r["dmn_similarity"].loc[:, "corr_with_dmn"].std()
-    #     dmn_similarity_avg = r["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
-    #     r["dmn_similarity_std"] = dmn_similarity_std
-    #     r["dmn_similarity"] = dmn_similarity_avg
+    for r in records:
+        dmn_similarity_std = r["dmn_similarity"].loc[:, "corr_with_dmn"].std()
+        dmn_similarity_avg = r["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
+        r["dmn_similarity_std"] = dmn_similarity_std
+        r["dmn_similarity"] = dmn_similarity_avg
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     result_frame.to_csv(output_dir / "metrics.tsv", sep="\t")
