@@ -1,8 +1,8 @@
 # What’s new
 
-## 25.12.1-alpha.dev
+## 26.02.0-alpha
 
-**Released MONTH YEAR**
+**Released February 2026**
 
 ### New
 
@@ -35,11 +35,6 @@
 ### Changes
 
 - CI: detect file changes and trigger different GitHub Actions workflows (#90).
-- Bump `prefix-dev/setup-pixi` from 0.9.3 to 0.9.4 (#93).
-- Bump `docker/login-action` from 3.6.0 to 3.7.0 (#94).
-- Bump `docker/setup-buildx-action` from 3.11.1 to 3.12.0 (#84).
-- Bump `actions/upload-artifact` from 5 to 6 (#83).
-- Bump `actions/cache` from 4 to 5 (#82).
 - Use `group_by` to infer plot labels instead of hard coding.
 - Limit gradient correlation to 3 components.
 
