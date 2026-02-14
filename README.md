@@ -1,4 +1,4 @@
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/SIMEXP/wonkyconn/main.svg)](https://results.pre-commit.ci/latest/github/SIMEXP/wonkyconn/main)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/HALFpipe/wonkyconn/main.svg)](https://results.pre-commit.ci/latest/github/HALFpipe/wonkyconn/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![https://github.com/psf/black](https://img.shields.io/badge/code%20style-black-000000.svg)
 [![Documentation Status](https://readthedocs.org/projects/wonkyconn/badge/?version=latest)](https://wonkyconn.readthedocs.io/en/latest/?badge=latest)
@@ -16,4 +16,4 @@ The project is based on the code of [`SIMEXP/fmriprep-denoise-benchmark`](https:
 - Install the optional dependency: `pip install "wonkyconn[textual]"`.
 - Launch the GUI instead of running headless: `wonkyconn --textual`.
 - The GUI requires an interactive terminal (TTY). If you are running inside a non-interactive job (for example, on an HPC batch node), run the CLI without `--textual` instead.
-- All required inputs are collected in the GUI; existing CLI defaults and behavior are preserved once you click **Run**.
+- All required inputs are collected in the GUI; existing CLI defaults and behaviour are preserved once you click **Run**.
