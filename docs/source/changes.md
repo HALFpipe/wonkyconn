@@ -1,5 +1,17 @@
 # What’s new
 
+## 26.02.0+1.dev
+
+**Released MONTH YEAR**
+
+### New
+
+### Fixes
+
+### Enhancements
+
+### Changes
+
 ## 26.02.0-alpha
 
 **Released February 2026**

@@ -17,9 +17,3 @@ The project is based on the code of [`SIMEXP/fmriprep-denoise-benchmark`](https:
 - Launch the GUI instead of running headless: `wonkyconn --textual`.
 - The GUI requires an interactive terminal (TTY). If you are running inside a non-interactive job (for example, on an HPC batch node), run the CLI without `--textual` instead.
 - All required inputs are collected in the GUI; existing CLI defaults and behavior are preserved once you click **Run**.
-
-## Tasks
-
-- Migrate the code from <https://github.com/SIMEXP/fmriprep-denoise-benchmark>
-- Add test data
-- Figure out how many confound regressors were used (should this be part of the BIDS metadata)
