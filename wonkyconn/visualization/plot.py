@@ -141,7 +141,7 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
             ecolor="black",
             capsize=3,
         )
-        sex_auc_axes.set_title("Sex prediction (AUC)")
+        sex_auc_axes.set_title("Sex prediction (AUC) with errorbar (95% CI)")
         sex_auc_axes.set_xlabel("AUC (ROC)")
     else:
         sex_auc_axes.set_visible(False)
@@ -162,7 +162,7 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
             ecolor="black",
             capsize=3,
         )
-        age_mae_axes.set_title("Age prediction (MAE)")
+        age_mae_axes.set_title("Age prediction (MAE) with errorbar (95% CI)")
         age_mae_axes.set_xlabel("MAE (years)")
     else:
         age_mae_axes.set_visible(False)
