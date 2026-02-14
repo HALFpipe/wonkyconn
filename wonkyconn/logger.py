@@ -1,4 +1,4 @@
-"""General logger for the cohort_creator package."""
+"""General logger for the wonkyconn package."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ import logging
 from rich.logging import RichHandler
 
 
-def gc_logger(log_level: str = "INFO") -> logging.Logger:
+def _setup_logger(log_level: str = "INFO") -> logging.Logger:
+    """Create and configure the package-wide logger with rich output."""
     logging.basicConfig(
         level=log_level,
         format="%(message)s",
@@ -15,20 +16,21 @@ def gc_logger(log_level: str = "INFO") -> logging.Logger:
         handlers=[RichHandler()],
     )
 
-    return logging.getLogger("giga_connectome")
+    return logging.getLogger("wonkyconn")
 
 
-gc_log = gc_logger()
+logger = _setup_logger()
 
 
 def set_verbosity(verbosity: int | list[int]) -> None:
+    """Set the logger verbosity level (0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG)."""
     if isinstance(verbosity, list):
         verbosity = verbosity[0]
     if verbosity == 0:
-        gc_log.setLevel("ERROR")
+        logger.setLevel("ERROR")
     elif verbosity == 1:
-        gc_log.setLevel("WARNING")
+        logger.setLevel("WARNING")
     elif verbosity == 2:
-        gc_log.setLevel("INFO")
+        logger.setLevel("INFO")
     elif verbosity == 3:
-        gc_log.setLevel("DEBUG")
+        logger.setLevel("DEBUG")

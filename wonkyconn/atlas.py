@@ -11,7 +11,7 @@ from nilearn.image import iter_img, load_img, math_img, resample_to_img  # type:
 from nilearn.maskers import NiftiLabelsMasker, NiftiMasker  # type: ignore[import-not-found]
 from numpy import typing as npt
 
-from .logger import gc_log
+from .logger import logger
 
 YEO_NETWORK_MAP = "atlases/atlas-Yeo7NetworksMNI152FreeSurferConformed1mmLiberal_dseg.nii.gz"
 
@@ -72,7 +72,6 @@ class Atlas(ABC):
         Returns:
             nib.nifti1.Nifti1Image: resampled yeo 7 networks image.
         """
-        # yeo7_nii = load_img(files("wonkyconn").parent / "data" / YEO_NETWORK_MAP)  # datalad managed directory at root
         yeo7_nii = load_img(files("wonkyconn") / "data" / YEO_NETWORK_MAP)  # in wonkyconn/data
         yeo7_nii = list(iter_img(yeo7_nii))[0]  # for some reason there's a fourth dimension
         yeo7_nii = resample_to_img(yeo7_nii, self.image, interpolation="nearest", copy_header=True, force_resample=True)
@@ -121,7 +120,7 @@ class DsegAtlas(Atlas):
             mask = array == i
             _, num_features = scipy.ndimage.label(mask, structure=self.structure)
             if num_features > 1:
-                gc_log.warning(f'Atlas "{self.seg}" region {i} has more than a single connected component')
+                logger.warning(f'Atlas "{self.seg}" region {i} has more than a single connected component')
 
     def get_centroid_points(self) -> npt.NDArray[np.float64]:
         array = self.get_array()
@@ -157,7 +156,7 @@ class ProbsegAtlas(Atlas):
         mask = array > self.epsilon
         _, num_features = scipy.ndimage.label(mask, structure=self.structure)
         if num_features > 1:
-            gc_log.warning(f'Atlas "{self.seg}" region {i} has more than a single connected component')
+            logger.warning(f'Atlas "{self.seg}" region {i} has more than a single connected component')
         return scipy.ndimage.center_of_mass(array)
 
     def get_centroid_points(self) -> npt.NDArray[np.float64]:

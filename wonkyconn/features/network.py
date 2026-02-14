@@ -19,7 +19,7 @@ def single_subject_within_network_connectivity(
     region_membership: pd.DataFrame,
     yeo_network_index: int = 7,
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], np.float64]:
-    """_summary_
+    """Compute within-network connectivity and DMN correlation for a single subject.
 
     Args:
         connectivity_matrix (ConnectivityMatrix): Functional connectivity matrix.
@@ -47,7 +47,7 @@ def single_subject_within_network_connectivity(
     # calculate similarity of the thresholded individual level seed based connectivity with the binary mask
     subj_average_connectivity_within_network = []
     subj_variance_connectivity_within_network = []
-    subj_corr_wtih_network = []
+    subj_corr_with_network = []
     for idx_roi in roi_index:
         seed_based_map = connectivity_matrix.load()[int(idx_roi), :]
 
@@ -74,7 +74,7 @@ def single_subject_within_network_connectivity(
 
         subj_average_connectivity_within_network.append(mean_within_network_connection)
         subj_variance_connectivity_within_network.append(std_within_network_connection)
-        subj_corr_wtih_network.append(correlation_with_given_network[1, 0])
+        subj_corr_with_network.append(correlation_with_given_network[1, 0])
 
     # summarise of the given subject
     subj_average_connectivity_within_network = np.asarray(subj_average_connectivity_within_network).mean(axis=0)
@@ -82,13 +82,13 @@ def single_subject_within_network_connectivity(
     return (
         subj_average_connectivity_within_network,
         subj_variance_connectivity_within_network,
-        np.nanmean(subj_corr_wtih_network),
+        np.nanmean(subj_corr_with_network),
     )
 
 
 def network_similarity(
     connectivity_matrices: list[ConnectivityMatrix], region_membership: pd.DataFrame
-) -> Tuple[np.float64, np.float64]:
+) -> Tuple[pd.DataFrame, np.float64]:
     """Calculate network similarity of of default mode network recovered through functional connectivity and Yeo's template.
 
     Args:
@@ -97,31 +97,31 @@ def network_similarity(
         region_membership (pd.DataFrame): Atlas parcel correspondence to Yeo 7 network. Generate throguh the Atlas class.
 
     Returns:
-        Tuple[np.float64, np.float64]: Group level statistics of average correlation with the default mode network and
+        Tuple[pd.DataFrame, np.float64]: Group level statistics of average correlation with the default mode network and
             t-statistics of DMN-FPN distance vs DMN-VIS distance.
     """
-    average_connectivity_within_network, std_connectivity_within_network, corr_wtih_dmn = [], [], []
+    average_connectivity_within_network, std_connectivity_within_network, corr_with_dmn = [], [], []
     for cm in connectivity_matrices:
         mean, std, corr = single_subject_within_network_connectivity(cm, region_membership, yeo_network_index=7)
         average_connectivity_within_network.append(mean)
         std_connectivity_within_network.append(std)
-        corr_wtih_dmn.append(corr)
+        corr_with_dmn.append(corr)
 
     df_average = pd.DataFrame(
         np.asarray(average_connectivity_within_network), columns=[f"mean_{r}" for r in region_membership.columns]
     )
     df_std = pd.DataFrame(np.asarray(std_connectivity_within_network), columns=[f"sd_{r}" for r in region_membership.columns])
-    corr_dmn = pd.DataFrame(np.asarray(corr_wtih_dmn), columns=["corr_with_dmn"])
+    corr_dmn = pd.DataFrame(np.asarray(corr_with_dmn), columns=["corr_with_dmn"])
     summary = pd.concat([df_average, df_std, corr_dmn], axis=1)
 
     # calculate distance
     summary["mean-diff_dmn_visual"] = summary["mean_yeo7-7"] - summary["mean_yeo7-1"]
     summary["mean-diff_dmn_fpn"] = summary["mean_yeo7-7"] - summary["mean_yeo7-6"]
 
-    mean_corr_with_dmn = summary["corr_with_dmn"].mean()
+    # corr_with_dmn = summary["corr_with_dmn"].values.astype(np.float64)
     t_stats_dmn_vis_fpn, _ = stats.ttest_rel(
         a=summary["mean-diff_dmn_visual"],
         b=summary["mean-diff_dmn_fpn"],
         nan_policy="omit",  # NaNs will be omitted when performing the calculation.
     )
-    return np.float64(mean_corr_with_dmn), np.float64(t_stats_dmn_vis_fpn)
+    return summary, np.float64(t_stats_dmn_vis_fpn)

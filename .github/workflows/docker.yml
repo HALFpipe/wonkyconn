@@ -62,7 +62,7 @@ jobs:
           cache-to: type=gha,mode=max
           tags: wonky:conn
           load: true
-
+      # always use light mode for testing container since the full version was tested during build
       - run: |
           datalad get data/halfpipe data/atlases
           docker run --rm \
@@ -71,6 +71,7 @@ jobs:
             wonky:conn \
             --phenotypes data/halfpipe/participants.tsv \
             --atlas Schaefer2018Combined data/atlases/atlas-Schaefer2018Combined_dseg.nii.gz \
+            --light-mode \
             data/halfpipe test group
 
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9

@@ -1,12 +1,12 @@
 import numpy as np
-import scipy
 from numba import guvectorize
 from numpy import typing as npt
+from scipy import stats
 
 
 def correlation_p_value(r: npt.NDArray[np.float64], m: int) -> npt.NDArray[np.float64]:
     ab = m / 2 - 1
-    distribution = scipy.stats.beta(ab, ab, loc=-1, scale=2)
+    distribution = stats.beta(ab, ab, loc=-1, scale=2)
     pvalue = 2 * (distribution.sf(np.abs(r)))
     return pvalue
 
@@ -25,18 +25,12 @@ def partial_correlation(
 ) -> None:
     """A minimal implementation of partial correlation.
 
-    Parameters
-    ----------
-    x, y : np.ndarray
-        Variable of interest.
-
-    cov : np.ndarray
-        Variable to be removed from variable of interest.
-
-    Returns
-    -------
-    dict
-        Correlation and p-value.
+    Args:
+        x (npt.NDArray[np.float64]): Variable of interest.
+        y (npt.NDArray[np.float64]): Variable of interest.
+        cov (npt.NDArray[np.float64]): Covariates to regress out.
+        r (npt.NDArray[np.float64]): Output array for the correlation coefficient.
+        count (npt.NDArray[np.int64]): Output array for the number of valid observations.
     """
 
     # Remove rows with NaN values

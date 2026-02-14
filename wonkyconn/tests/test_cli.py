@@ -16,6 +16,7 @@ import scipy
 from tqdm.auto import tqdm
 
 from wonkyconn import __version__
+from wonkyconn.config import WonkyConnConfig
 from wonkyconn.file_index.bids import BIDSIndex
 from wonkyconn.run import global_parser, main
 from wonkyconn.workflow import workflow
@@ -37,6 +38,68 @@ def test_help(capsys):
         pass
     captured = capsys.readouterr()
     assert "Evaluating the residual motion in fMRI connectome and visualize reports" in captured.out
+
+
+def test_cli_and_textual_namespace_consistency(tmp_path: Path):
+    """Ensure CLI (run.py) and Textual UI produce namespaces with the same attributes.
+
+    Both interfaces should produce namespaces that workflow() can consume,
+    meaning they must have identical attribute names.
+    """
+    # Create minimal valid paths for testing
+    bids_dir = tmp_path / "bids"
+    bids_dir.mkdir()
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    phenotypes = tmp_path / "participants.tsv"
+    phenotypes.touch()
+    atlas_path = tmp_path / "atlas.nii.gz"
+    atlas_path.touch()
+
+    # Get namespace from CLI parser
+    parser = global_parser()
+    cli_args = parser.parse_args(
+        [
+            str(bids_dir),
+            str(output_dir),
+            "group",
+            "--phenotypes",
+            str(phenotypes),
+            "--atlas",
+            "TestAtlas",
+            str(atlas_path),
+        ]
+    )
+
+    # Get namespace from WonkyConnConfig (used by Textual UI)
+    config = WonkyConnConfig(
+        bids_dir=bids_dir,
+        output_dir=output_dir,
+        analysis_level="group",
+        phenotypes=phenotypes,
+        atlas=[("TestAtlas", atlas_path)],
+        verbosity=2,
+        debug=False,
+    )
+    config_namespace = config.to_namespace()
+
+    # Get the attribute names from both namespaces
+    cli_attrs = set(vars(cli_args).keys())
+    config_attrs = set(vars(config_namespace).keys())
+
+    # Attributes that are interface-specific and not passed to workflow()
+    # These are handled separately before calling workflow()
+    interface_specific_attrs = {"textual", "version", "suppress_warnings"}
+
+    # The workflow-relevant CLI attributes (excluding interface-specific ones)
+    workflow_cli_attrs = cli_attrs - interface_specific_attrs
+
+    # Both should have the same attributes for workflow consumption
+    assert workflow_cli_attrs == config_attrs, (
+        f"Namespace mismatch!\n"
+        f"CLI-only attrs (not in config): {workflow_cli_attrs - config_attrs}\n"
+        f"Config-only attrs (not in CLI): {config_attrs - workflow_cli_attrs}"
+    )
 
 
 def _copy_file(path: Path, new_path: Path, sub: str) -> None:
@@ -160,6 +223,10 @@ def test_halfpipe(data_path: Path, tmp_path: Path):
     # Add persistent storage to extract figure as artifact
     persistent_dir = Path("figures_artifacts")
     persistent_dir.mkdir(exist_ok=True)
+
+    for f in output_dir.glob("*.tsv"):
+        shutil.copy(f, persistent_dir / f.name)
+
     fig_file = output_dir / "metrics.png"
     shutil.copy(fig_file, persistent_dir / fig_file.name)
 

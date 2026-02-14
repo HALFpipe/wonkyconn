@@ -8,28 +8,29 @@
 git clone git@github.com:<your_username>/wonkyconn.git
 ```
 
-2. Set up a virtual environment to work in using whichever environment management tool you're used to and activate it. For example:
+2. Set up a development environment. We recommend using [pixi](https://pixi.sh):
+
+```bash
+pixi install
+```
+
+Alternatively, you can use a virtual environment with pip:
 
 ```bash
 python3 -m venv wonkyconn
 source wonkyconn/bin/activate
+pip install -e ".[dev]"
 ```
 
-3. Install the developmental version of the project. This will include all the dependency necessary for developers. For details on the packages installed, see `pyproject.toml`.
+3. Install the data required for testing.
+
+The test data is managed with [datalad](https://www.datalad.org/). After installing datalad, fetch the test data:
 
 ```bash
-pip install -e .[dev]
+datalad get wonkyconn/data/test_data
 ```
 
-4. Install the data required for testing from zenodo
-
-This can be done using tox by running:
-
-```bash
-tox -e test_data
-```
-
-5. Install pre-commit hooks to run all the checks before each commit.
+4. Install pre-commit hooks to run all the checks before each commit.
 
 ```bash
 pre-commit install
@@ -59,7 +60,7 @@ git checkout -b your_branch
 If you want to make sure all the tests will be run by github continuous integration,
 make sure that your commit message contains `full_test`.
 
-5. Run the tests locally; you can run spectfic tests to speed up the process:
+5. Run the tests locally; you can run specific tests to speed up the process:
 
 ```bash
 pytest -v wonkyconn/tests/test_connectome.py::test_calculate_intranetwork_correlation
@@ -83,18 +84,23 @@ git push
 
 The workflow is the same as code contributions, with some minor differences.
 
-1. Install the `[doc]` dependencies.
+1. Install the `docs` dependencies.
+
+Using pixi:
 
 ```bash
-pip install -e '.[doc]'
+pixi run -e docs sphinx-build docs/source docs/build/html
 ```
 
-2. After making changes, build the docs locally:
+Or with pip:
 
 ```bash
+pip install -e ".[docs]"
 cd docs
 make html
 ```
+
+2. After making changes, review the generated HTML locally.
 
 3. Submit your changes.
 
@@ -117,13 +123,12 @@ One your PR is ready a member of the development team will review your changes t
 
 ### Running the demo
 
-You can run a demo of the bids app by downloading some test data.
+You can run a demo by downloading some test data.
 
 Run the following from the root of the repository.
 
 ```bash
-pip install tox
-tox -e test_data
+datalad get wonkyconn/data/test_data
 ```
 
 ```bash

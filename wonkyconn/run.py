@@ -7,10 +7,12 @@ from typing import Sequence
 
 from . import __version__
 from .config import WonkyConnConfig
-from .workflow import gc_log, workflow
+from .logger import logger
+from .workflow import workflow
 
 
 def global_parser(exit_on_error: bool = True) -> argparse.ArgumentParser:
+    """Build the CLI argument parser for wonkyconn."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=("Evaluating the residual motion in fMRI connectome and visualize reports"),
@@ -58,7 +60,11 @@ def global_parser(exit_on_error: bool = True) -> argparse.ArgumentParser:
     parser.add_argument("-v", "--version", action="version", version=__version__)
     parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
-        "--light-mode", action="store_true", default=False, help="Disable sex and age prediction to reduce runtime."
+        "--light-mode",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Disable sex and age prediction to reduce runtime.",
     )
     parser.add_argument(
         "--verbosity",
@@ -110,7 +116,8 @@ def _run_textual_ui(config: WonkyConnConfig) -> WonkyConnConfig | None:
         missing_mod = getattr(exc, "name", "") or ""
         if missing_mod.startswith("textual"):
             print(
-                'The Textual UI requires the optional dependency "textual". Install it with `pip install "wonkyconn[textual]"`.',
+                'The Textual UI requires the optional dependency "textual". '
+                'Install it with `pip install "wonkyconn[textual]"`.',
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -121,6 +128,7 @@ def _run_textual_ui(config: WonkyConnConfig) -> WonkyConnConfig | None:
 
 
 def main(argv: None | Sequence[str] = None) -> None:
+    """Entry point for the wonkyconn CLI."""
     raw_args = list(sys.argv[1:] if argv is None else argv)
 
     pre_parser = argparse.ArgumentParser(add_help=False, exit_on_error=False)
@@ -167,7 +175,7 @@ def main(argv: None | Sequence[str] = None) -> None:
     try:
         workflow(args_for_workflow)
     except Exception as e:
-        gc_log.exception("Exception: %s", e, exc_info=True)
+        logger.exception("Exception: %s", e, exc_info=True)
         if debug_enabled:
             import pdb
 

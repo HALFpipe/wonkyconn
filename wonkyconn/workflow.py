@@ -29,11 +29,16 @@ from .features.quality_control_connectivity import (
     calculate_qcfc_percentage,
 )
 from .file_index.bids import BIDSIndex
-from .logger import gc_log, set_verbosity
+from .logger import logger, set_verbosity
 from .visualization.plot import plot
+
+_DEFAULT_N_SPLITS = 20
+_DEFAULT_N_PCA = 100
+_DEFAULT_N_JOBS = 4
 
 
 def is_halfpipe(index: BIDSIndex) -> bool:
+    """Check whether the indexed dataset was produced by HALFpipe."""
     for path in index.tags_by_paths.keys():
         try:
             derivatives_index = path.parts.index("derivatives")
@@ -46,15 +51,14 @@ def is_halfpipe(index: BIDSIndex) -> bool:
 
 
 def workflow(args: argparse.Namespace) -> None:
+    """Run the group-level connectivity quality-control pipeline."""
     if "pytest" not in sys.modules:
         set_verbosity(args.verbosity)
-    gc_log.debug(vars(args))
+    logger.debug(vars(args))
 
     # check if light mode is enabled - if so, it will not run the age and sex prediction and gradient similarity
-    # patch: currently, the textual app doesn't have the light mode flag, 
-    # always run the full app with texture app
-    disable_prediction_gradient = getattr(args, 'light_mode', False) 
-        
+    disable_prediction_gradient = getattr(args, "light_mode", False)
+
     # Check BIDS path
     bids_dir = args.bids_dir
     index = BIDSIndex()
@@ -82,8 +86,7 @@ def workflow(args: argparse.Namespace) -> None:
 
     # Load atlases
     atlases: dict[str, Atlas] = {name: Atlas.create(name, Path(atlas_path_str)) for name, atlas_path_str in args.atlas}
-    # seann: Add debugging to see what the atlas dictionary contains
-    gc_log.debug(f"Atlas dictionary contains: {list(atlases.keys())}")
+    logger.debug(f"Atlas dictionary contains: {list(atlases.keys())}")
 
     Group = namedtuple("Group", group_by)  # type: ignore[misc]
 
@@ -96,7 +99,7 @@ def workflow(args: argparse.Namespace) -> None:
 
         metadata = index.get_metadata(timeseries_path)
         if not metadata:
-            gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
+            logger.warning(f"Skipping {timeseries_path} due to missing metadata")
             continue
 
         if "NumberOfVolumes" not in metadata:
@@ -109,7 +112,7 @@ def workflow(args: argparse.Namespace) -> None:
         relmat_query = query | relmat_base_query | dict(extension=".tsv")
         for relmat_path in index.get(**relmat_query):
             group = Group(*(index.get_tag_value(relmat_path, key) for key in group_by))
-            gc_log.debug(f"Processing group {group} with file {relmat_path}")
+            logger.debug(f"Processing group {group} with file {relmat_path}")
             connectivity_matrix = ConnectivityMatrix(relmat_path, metadata, has_header=has_header)
             grouped_connectivity_matrix[group].append(connectivity_matrix)
             seg = index.get_tag_value(relmat_path, seg_key)
@@ -137,12 +140,25 @@ def workflow(args: argparse.Namespace) -> None:
             disable_prediction_gradient,
         )
         record.update(dict(zip(group_by, key, strict=False)))
+        if len(group_by) == 2:
+            record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{'-'.join(group_by)}.tsv", sep="\t")
+        else:
+            record["dmn_similarity"].to_csv(output_dir / f"dmn_similarity_{group_by[0]}.tsv", sep="\t")
+
+        dmn_similarity_std = record["dmn_similarity"].loc[:, "corr_with_dmn"].std()
+        dmn_similarity_avg = record["dmn_similarity"].loc[:, "corr_with_dmn"].mean()
+        record["dmn_similarity_std"] = dmn_similarity_std
+        record["dmn_similarity_mean"] = dmn_similarity_avg
+
         records.append(record)
+
+    plot(records, group_by, output_dir)
+
+    for record in records:
+        record.pop("dmn_similarity")
 
     result_frame = pd.DataFrame.from_records(records, index=group_by)
     result_frame.to_csv(output_dir / "metrics.tsv", sep="\t")
-
-    plot(result_frame, group_by, output_dir)
 
 
 def make_record(
@@ -156,7 +172,7 @@ def make_record(
     atlases: dict[str, Atlas],
     disable_prediction_gradient: bool,
 ) -> dict[str, Any]:
-    # seann: added sub- tag when looking up subjects only if sub- is not already present
+    """Compute all QC metrics for a single group of connectivity matrices."""
     seg_subjects: list[str] = list()
     filtered: list[ConnectivityMatrix] = list()
 
@@ -174,7 +190,7 @@ def make_record(
             seg_subjects.append(found)
             filtered.append(c)
         else:
-            gc_log.info(f"Skipping subject {sub}: not found in phenotype file.")
+            logger.info(f"Skipping subject {sub}: not found in phenotype file.")
 
     #  Renaming for consistency
     connectivity_matrices[:] = filtered
@@ -186,10 +202,9 @@ def make_record(
     (seg,) = index.get_tag_values(seg_key, {c.path for c in connectivity_matrices})
     distance_matrix = distance_matrices[seg]
 
-    # seann: compute group-level GCOR statistics (mean and SEM)
     gcor = calculate_gcor(connectivity_matrices)
 
-    dmn_similarity, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
+    dmn_similarity_summary, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
     atlas = atlases[seg].image
 
     record = dict(
@@ -197,20 +212,22 @@ def make_record(
         percentage_significant_qcfc=calculate_qcfc_percentage(qcfc),
         distance_dependence=calculate_distance_dependence(qcfc, distance_matrix),
         gcor=gcor,
-        dmn_similarity=dmn_similarity,
+        dmn_similarity=dmn_similarity_summary,
         dmn_vis_distance_vs_dmn_fpn=t_stats_dmn_vis_fpn,
         **calculate_degrees_of_freedom_loss(connectivity_matrices)._asdict(),
     )
 
     if disable_prediction_gradient:
-        gc_log.info("Light mode enabled - skipping age and sex prediction, gradient similarity.")
+        logger.info("Light mode enabled - skipping age and sex prediction, gradient similarity.")
         record.update(
             dict(
                 sex_auc=np.nan,
-                sex_auc_std=np.nan,
+                sex_auc_ci_lower=np.nan,
+                sex_auc_ci_upper=np.nan,
                 sex_accuracy=np.nan,
                 age_mae=np.nan,
-                age_mae_std=np.nan,
+                age_mae_ci_lower=np.nan,
+                age_mae_ci_upper=np.nan,
                 age_r2=np.nan,
                 gradients_similarity=np.nan,
             )
@@ -229,35 +246,37 @@ def make_record(
             connectivity_matrices,
             ages=ages,
             genders=genders,
-            n_splits=100,
+            n_splits=_DEFAULT_N_SPLITS,
             random_state=42,
-            n_pca=100,
-            n_jobs=4,
-            clf_model="logreg",  # logistic regression for sex
-            reg_model="ridge",  # ridge regression for age
+            n_pca=_DEFAULT_N_PCA,
+            n_jobs=_DEFAULT_N_JOBS,
         )
 
         # scores is:
         # {
         #   "sex_auc": float,
-        #   "sex_auc_std": float,
+        #   "sex_auc_ci_lower": float,
+        #   "sex_auc_ci_upper": float,
         #   "sex_accuracy": float,
         #   "age_mae": float,
-        #   "age_mae_std": float,
+        #   "age_mae_ci_lower": float,
+        #   "age_mae_ci_upper": float,
         #   "age_r2": float,
         # }
         record.update(scores)
 
-    except Exception as exc:
-        gc_log.warning(f"[age_sex_prediction] Skipping age/sex prediction for this group due to error: {exc!r}")
+    except (ValueError, np.linalg.LinAlgError) as exc:
+        logger.warning(f"[age_sex_prediction] Skipping age/sex prediction for this group due to error: {exc!r}")
         # If it fails, we still want consistent columns in the output.
         record.update(
             dict(
                 sex_auc=np.nan,
-                sex_auc_std=np.nan,
+                sex_auc_ci_lower=np.nan,
+                sex_auc_ci_upper=np.nan,
                 sex_accuracy=np.nan,
                 age_mae=np.nan,
-                age_mae_std=np.nan,
+                age_mae_ci_lower=np.nan,
+                age_mae_ci_upper=np.nan,
                 age_r2=np.nan,
             )
         )
@@ -266,6 +285,7 @@ def make_record(
 
 
 def load_data_frame(args: argparse.Namespace) -> pd.DataFrame:
+    """Load a phenotype TSV with ``participant_id``, ``gender``, and ``age`` columns."""
     data_frame = pd.read_csv(
         args.phenotypes,
         sep="\t",

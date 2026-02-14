@@ -11,6 +11,7 @@ from typing import Mapping
 
 
 def create_defaultdict_of_set() -> defaultdict[str, set[Path]]:
+    """Factory for a ``defaultdict`` whose values are sets of ``Path``."""
     return defaultdict(set)
 
 

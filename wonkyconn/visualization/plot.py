@@ -1,9 +1,9 @@
-from functools import partial
 from pathlib import Path
-from typing import Sequence
+from typing import Any
 
 import matplotlib
 import matplotlib.patches as mpatches
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -16,25 +16,12 @@ palette = sns.color_palette(n_colors=13)
 matplotlib.rcParams["font.family"] = "DejaVu Sans"
 
 
-# seann: added type for series
-def _make_group_label(group_by: list[str], values: str | Sequence[str]) -> str:
-    if isinstance(values, str):
-        values = [values]
-
-    label: str = ""
-    for a, b in zip(group_by, values, strict=True):
-        if label:
-            label += "\n"
-        label += f"{a}-{b}"
-    return label
-
-
-def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> None:
+def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -> None:
     """
     Plot summary metrics based on the given result data frame.
 
     Args:
-        result_frame (pd.DataFrame): Must contain columns:
+        records (list[dict]): Must contain keys:
             - median_absolute_qcfc
             - percentage_significant_qcfc
             - distance_dependence
@@ -52,98 +39,136 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
         group_by (list[str]): The list of columns that the results are grouped by.
         output_dir (Path): The directory to save the plot image into as "metrics.png".
     """
-    # seann: added type for series
-    group_labels: "pd.Series[str]" = pd.Series(result_frame.index.map(partial(_make_group_label, group_by)))
+    # separate dmn similarity from the rest of the metrics
+    dmn_sim_array = []
+    for record in records:
+        df_dmn_similarity = record.pop("dmn_similarity")
+        for g in group_by:
+            df_dmn_similarity[g] = record[g]
+        dmn_sim_array.append(df_dmn_similarity[["corr_with_dmn"] + group_by])
+
+    df_dmn_sim_array = pd.concat(dmn_sim_array, ignore_index=True)
+    if len(group_by) == 2:
+        df_dmn_sim_array["group_labels"] = df_dmn_sim_array[group_by].apply(lambda x: "-".join(x.astype(str)), axis=1)
+    else:
+        df_dmn_sim_array["group_labels"] = df_dmn_sim_array[group_by[0]]
+
+    # summarize the info
+    for record, dmn_sim in zip(records, dmn_sim_array, strict=True):
+        record["dmn_similarity"] = dmn_sim["corr_with_dmn"].mean()
+    result_frame = pd.DataFrame.from_records(records, index=group_by)
     data_frame = result_frame.reset_index()
+    if len(group_by) == 2:  # halfpipe
+        data_frame["group_labels"] = data_frame[group_by].apply(lambda x: "-".join(x.astype(str)), axis=1)
+    else:  # bids connectome
+        data_frame["group_labels"] = data_frame[group_by[0]]
 
     figure, axes_array = plt.subplots(
-        nrows=1,
-        ncols=11,
-        figsize=(40, 8),
+        nrows=2,
+        ncols=6,
+        figsize=(27, 9),
         constrained_layout=True,
         sharey=True,
         dpi=300,
     )
 
+    motion_axes, insight_axes = axes_array
     (
         median_absolute_qcfc_axes,
         percentage_significant_qcfc_axes,
         distance_dependence_axes,
         gcor_axes,
-        dmn_axes,
+        _,
+        legend_axes,
+    ) = motion_axes
+    (
+        dmn_mean_axes,
         modular_dist_axes,
         gradients_axes,
         sex_auc_axes,
         age_mae_axes,
         degrees_of_freedom_loss_axes,
-        legend_axes,
-    ) = axes_array
+    ) = insight_axes
 
-    sns.barplot(y=group_labels, x=data_frame.median_absolute_qcfc, color=palette[0], ax=median_absolute_qcfc_axes)
+    sns.barplot(data=data_frame, y="group_labels", x="median_absolute_qcfc", color=palette[0], ax=median_absolute_qcfc_axes)
     median_absolute_qcfc_axes.set_title("Median absolute value of QC-FC correlations")
     median_absolute_qcfc_axes.set_xlabel("Median absolute value")
     median_absolute_qcfc_axes.set_ylabel("Group")
 
     sns.barplot(
-        y=group_labels, x=data_frame.percentage_significant_qcfc, color=palette[1], ax=percentage_significant_qcfc_axes
+        data=data_frame,
+        y="group_labels",
+        x="percentage_significant_qcfc",
+        color=palette[1],
+        ax=percentage_significant_qcfc_axes,
     )
     percentage_significant_qcfc_axes.set_title("% significant QC–FC edges")
     percentage_significant_qcfc_axes.set_xlabel("Percentage %")
 
-    sns.barplot(y=group_labels, x=data_frame.distance_dependence, color=palette[2], ax=distance_dependence_axes)
+    sns.barplot(data=data_frame, y="group_labels", x="distance_dependence", color=palette[2], ax=distance_dependence_axes)
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
-    # seann: GCOR visualization with horizontal bars and SEM whiskers
-    sns.barplot(y=group_labels, x=data_frame.gcor, color=palette[3], ax=gcor_axes)
+    sns.barplot(data=data_frame, y="group_labels", x="gcor", color=palette[3], ax=gcor_axes)
     gcor_axes.set_title("Global correlation (GCOR)")
     gcor_axes.set_xlabel("Mean correlation")
 
-    sns.barplot(y=group_labels, x=data_frame.dmn_similarity, color=palette[4], ax=dmn_axes)
-    dmn_axes.set_title("Similarity with DMN")
-    dmn_axes.set_xlabel("Mean correlation")
+    sns.barplot(data=df_dmn_sim_array, y="group_labels", x="corr_with_dmn", color=palette[4], ax=dmn_mean_axes, errorbar="sd")
+    dmn_mean_axes.set_title("Similarity with DMN")
+    dmn_mean_axes.set_xlabel("Mean correlation")
 
-    sns.barplot(y=group_labels, x=data_frame.dmn_vis_distance_vs_dmn_fpn, color=palette[5], ax=modular_dist_axes)
+    sns.barplot(data=data_frame, y="group_labels", x="dmn_vis_distance_vs_dmn_fpn", color=palette[5], ax=modular_dist_axes)
     modular_dist_axes.set_title("Differences between\nDMN-FPN vs DMN-visual")
-    modular_dist_axes.set_xlabel("Mean t-vlaue")
+    modular_dist_axes.set_xlabel("Mean t-value")
 
-    sns.barplot(y=group_labels, x=data_frame.gradients_similarity, color=palette[6], ax=gradients_axes)
+    sns.barplot(data=data_frame, y="group_labels", x="gradients_similarity", color=palette[7], ax=gradients_axes)
     gradients_axes.set_title("Gradient similarity")
     gradients_axes.set_xlabel("Mean similarity (Spearman's $\\rho$)")
 
-    # --- Sex prediction (AUC) with errorbar (std)
+    # --- Sex prediction (AUC) with errorbar (95% CI)
     if "sex_auc" in data_frame.columns:
+        sex_auc_ci = np.array(
+            [
+                data_frame.sex_auc - data_frame.sex_auc_ci_lower,
+                data_frame.sex_auc_ci_upper - data_frame.sex_auc,
+            ]
+        )
         sex_auc_axes.barh(
-            y=group_labels,
+            y=data_frame.group_labels,
             width=data_frame.sex_auc,
-            xerr=data_frame.sex_auc_std,
+            xerr=sex_auc_ci,
             color=palette[8],
             ecolor="black",
             capsize=3,
         )
-        sex_auc_axes.set_title("Sex prediction (AUC)")
+        sex_auc_axes.set_title("Sex prediction (AUC) with errorbar (95% CI)")
         sex_auc_axes.set_xlabel("AUC (ROC)")
     else:
         sex_auc_axes.set_visible(False)
 
-    # --- Age prediction (MAE) with errorbar (std)
+    # --- Age prediction (MAE) with errorbar (95% CI)
     if "age_mae" in data_frame.columns:
+        age_mae_ci = np.array(
+            [
+                data_frame.age_mae - data_frame.age_mae_ci_lower,
+                data_frame.age_mae_ci_upper - data_frame.age_mae,
+            ]
+        )
         age_mae_axes.barh(
-            y=group_labels,
+            y=data_frame.group_labels,
             width=data_frame.age_mae,
-            xerr=data_frame.age_mae_std,
+            xerr=age_mae_ci,
             color=palette[9],
             ecolor="black",
             capsize=3,
         )
-        age_mae_axes.set_title("Age prediction (MAE)")
+        age_mae_axes.set_title("Age prediction (MAE) with errorbar (95% CI)")
         age_mae_axes.set_xlabel("MAE (years)")
     else:
         age_mae_axes.set_visible(False)
 
     plot_degrees_of_freedom_loss(
         data_frame,
-        group_labels,
         degrees_of_freedom_loss_axes,
         legend_axes,
         [palette[10], palette[11], palette[12]],
@@ -154,26 +179,29 @@ def plot(result_frame: pd.DataFrame, group_by: list[str], output_dir: Path) -> N
 
 def plot_degrees_of_freedom_loss(
     result_frame: pd.DataFrame,
-    group_labels: "pd.Series[str]",
     degrees_of_freedom_loss_axes: Axes,
     legend_axes: Axes,
     colors: list[str],
 ) -> None:
+    """Plot stacked bars showing degrees-of-freedom loss by source."""
     sns.barplot(
-        y=group_labels,
-        x=result_frame.confound_regression_percentage,
+        data=result_frame,
+        y="group_labels",
+        x="confound_regression_percentage",
         color=colors[0],
         ax=degrees_of_freedom_loss_axes,
     )
     sns.barplot(
-        y=group_labels,
-        x=result_frame.motion_scrubbing_percentage,
+        data=result_frame,
+        y="group_labels",
+        x="motion_scrubbing_percentage",
         color=colors[1],
         ax=degrees_of_freedom_loss_axes,
     )
     sns.barplot(
-        y=group_labels,
-        x=result_frame.nonsteady_states_detector_percentage,
+        data=result_frame,
+        y="group_labels",
+        x="nonsteady_states_detector_percentage",
         color=colors[2],
         ax=degrees_of_freedom_loss_axes,
     )
