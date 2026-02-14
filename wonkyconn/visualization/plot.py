@@ -109,7 +109,6 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
     distance_dependence_axes.set_title("Distance dependence of QC-FC")
     distance_dependence_axes.set_xlabel("Absolute value of Spearman's $\\rho$")
 
-    # seann: GCOR visualization with horizontal bars and SEM whiskers
     sns.barplot(data=data_frame, y="group_labels", x="gcor", color=palette[3], ax=gcor_axes)
     gcor_axes.set_title("Global correlation (GCOR)")
     gcor_axes.set_xlabel("Mean correlation")
@@ -184,6 +183,7 @@ def plot_degrees_of_freedom_loss(
     legend_axes: Axes,
     colors: list[str],
 ) -> None:
+    """Plot stacked bars showing degrees-of-freedom loss by source."""
     sns.barplot(
         data=result_frame,
         y="group_labels",

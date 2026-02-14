@@ -3,9 +3,23 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-from textual.app import App, ComposeResult
-from textual.containers import Center, Container, Horizontal, Vertical
-from textual.widgets import Button, Checkbox, DirectoryTree, Footer, Header, Input, Label, Select, Static
+from textual.app import App, ComposeResult  # type: ignore[import-not-found]
+from textual.containers import Center, Container, Horizontal, Vertical  # type: ignore[import-not-found]
+from textual.events import DescendantFocus  # type: ignore[import-not-found]
+from textual.widgets import (  # type: ignore[import-not-found]
+    Button,
+    Checkbox,
+    DirectoryTree,
+    Footer,
+    Header,
+    Input,
+    Label,
+    Select,
+    Static,
+)
+from textual.widgets._directory_tree import DirEntry  # type: ignore[import-not-found]
+from textual.widgets._select import NoSelection  # type: ignore[import-not-found]
+from textual.widgets._tree import Tree  # type: ignore[import-not-found]
 
 from .config import WonkyConnConfig
 
@@ -245,8 +259,9 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
 
     def _apply_selection_to_target(self) -> None:
         """Apply selection strictly based on the target dropdown."""
-        target_select = self.query_one("#target-select", Select)
-        target_value = target_select.value or ""
+        target_select = self.query_one("#target-select", Select[str])
+        raw_value = target_select.value
+        target_value = "" if isinstance(raw_value, NoSelection) else raw_value
 
         if target_value in {"bids_dir", "output_dir", "phenotypes", "atlas_path"}:
             self._apply_selection_to_path_display(target_value)
@@ -322,8 +337,8 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
         elif not (atlas_path.exists() or atlas_path.is_symlink()) or (atlas_path.exists() and not atlas_path.is_file()):
             errors.append(f"Atlas file must exist: {atlas_path}")
 
-        verbosity_str = self.query_one("#verbosity", Select).value or "2"
-        verbosity = int(verbosity_str)
+        raw_verbosity = self.query_one("#verbosity", Select[str]).value
+        verbosity = int("2" if isinstance(raw_verbosity, NoSelection) else raw_verbosity)
         debug = self.query_one("#debug", Checkbox).value
         light_mode = self.query_one("#light_mode", Checkbox).value
         suppress_warnings = self.query_one("#suppress_warnings", Checkbox).value
@@ -332,6 +347,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
             self._set_status("\n".join(errors), error=True)
             return None
 
+        assert atlas_path is not None  # validated above
         config = WonkyConnConfig(
             bids_dir=bids_dir,
             output_dir=output_dir,
@@ -382,11 +398,14 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
         self.selected_path = event.path
         self._set_status(f"Selected directory: {event.path}", error=False)
 
-    def on_directory_tree_node_highlighted(self, event: DirectoryTree.NodeHighlighted) -> None:
+    def on_tree_node_highlighted(self, event: Tree.NodeHighlighted[DirEntry]) -> None:
         # Capture single-click highlight so a file selection is remembered before pressing the button
-        self.selected_path = event.path
-        kind = "directory" if event.path.is_dir() else "file"
-        self._set_status(f"Highlighted {kind}: {event.path}", error=False)
+        if event.node.data is None:
+            return
+        path = event.node.data.path
+        self.selected_path = path
+        kind = "directory" if path.is_dir() else "file"
+        self._set_status(f"Highlighted {kind}: {path}", error=False)
 
     def action_run(self) -> None:
         config = self._validate_and_build_config()
@@ -396,14 +415,7 @@ class WonkyConnApp(App[WonkyConnConfig | None]):
     def action_cancel(self) -> None:
         self.exit(None)
 
-    def on_focus(self, event) -> None:  # type: ignore[override]
+    def on_descendant_focus(self, event: DescendantFocus) -> None:
         """Track the last focused input, regardless of widget type."""
-        from textual.events import Focus
-
-        if not isinstance(event, Focus):
-            return
-        if isinstance(event.sender, Input):
-            self._last_input = event.sender
-
-    def on_input_clicked(self, event: Input.Clicked) -> None:
-        self._last_input = event.input
+        if isinstance(event.widget, Input):
+            self._last_input = event.widget

@@ -19,7 +19,7 @@ def single_subject_within_network_connectivity(
     region_membership: pd.DataFrame,
     yeo_network_index: int = 7,
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], np.float64]:
-    """_summary_
+    """Compute within-network connectivity and DMN correlation for a single subject.
 
     Args:
         connectivity_matrix (ConnectivityMatrix): Functional connectivity matrix.

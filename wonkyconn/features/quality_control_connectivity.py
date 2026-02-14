@@ -1,6 +1,6 @@
 from __future__ import (
     annotations,
-)  # seann: added future import for annotations to allow type hints in function signatures
+)
 
 from itertools import chain
 from typing import Iterable
@@ -74,56 +74,37 @@ def calculate_qcfc(
     return qcfc
 
 
-# seann: added type for series
 def calculate_median_absolute(x: "pd.Series[float]") -> float:
     """Calculate Absolute median value"""
     return x.abs().median()
 
 
-# seann: added type for series
 def significant_level(x: "pd.Series[float]", alpha: float = 0.05, correction: str | None = None) -> npt.NDArray[np.bool_]:
-    """
-    Apply FDR correction to a pandas.Series p-value object.
+    """Apply FDR correction to a pandas.Series p-value object.
 
-    Parameters
-    ----------
+    Args:
+        x (pandas.Series): Uncorrected p-values.
+        alpha (float): Alpha threshold.
+        correction (str | None): Multiple comparison method. ``None`` for no
+            correction. See ``statsmodels.stats.multitest.multipletests``.
 
-    x : pandas.Series
-        Uncorrected p-values.
-
-    alpha : float
-        Alpha threshold.
-
-    method : None or str
-        Default as None for no multiple comparison
-        Multiple comparison methods.
-        See statsmodels.stats.multitest.multipletests
-
-    Returns
-    -------
-    ndarray, boolean
-        Mask for data passing multiple comparison test.
+    Returns:
+        npt.NDArray[np.bool_]: Mask for data passing multiple comparison test.
     """
     if isinstance(correction, str):
         res, _, _, _ = multipletests(x, alpha=alpha, method=correction)
     else:
-        res = x < 0.05
+        res = x < alpha
     return res
 
 
 def calculate_qcfc_percentage(qcfc: pd.DataFrame) -> float:
-    """
-    Calculate the percentage of significant QC-FC relationships.
+    """Calculate the percentage of significant QC-FC relationships.
 
-    Parameters
-    ----------
-    qcfc : pd.DataFrame
-        The QC-FC values between connectivity matrices and the metric.
+    Args:
+        qcfc (pd.DataFrame): The QC-FC values between connectivity matrices and the metric.
 
-    Returns
-    -------
-    float
-        The percentage of significant QC-FC relationships.
+    Returns:
+        float: The percentage of significant QC-FC relationships.
     """
-    # seann: cast mean p_value to float for type consistency
     return 100 * float(significant_level(qcfc.p_value).mean())

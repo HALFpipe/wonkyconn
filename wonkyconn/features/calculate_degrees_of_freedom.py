@@ -18,17 +18,15 @@ class DegreesOfFreedomLossResult(NamedTuple):
 def calculate_degrees_of_freedom_loss(
     connectivity_matrices: list[ConnectivityMatrix],
 ) -> DegreesOfFreedomLossResult:
-    """
-    Calculate the percent of degrees of freedom lost during denoising.
+    """Calculate the percent of degrees of freedom lost during denoising.
 
-    Parameters:
-    - bids_file (BIDSFile): The BIDS file for which to calculate the degrees of freedom.
+    Args:
+        connectivity_matrices (list[ConnectivityMatrix]): Connectivity matrices to evaluate.
 
     Returns:
-    - float: The percentage of degrees of freedom lost.
-
+        DegreesOfFreedomLossResult: Percentages for confound regression, motion
+            scrubbing, and non-steady-state volume removal.
     """
-    # seann: ensure count is a list of integers instead of a numpy array
     count: list[int] = [connectivity_matrix.metadata["NumberOfVolumes"] for connectivity_matrix in connectivity_matrices]
 
     calculate = partial(calculate_for_key, connectivity_matrices, count)
@@ -68,26 +66,16 @@ def calculate_for_key(
 ) -> float:
     """Get the mean percentage for a given metadata key.
 
-    Parameters
-    ----------
-    connectivity_matrices : list[ConnectivityMatrix]
-        List of connectivity matrices.
+    Args:
+        connectivity_matrices (list[ConnectivityMatrix]): List of connectivity matrices.
+        count (Sequence[int]): The total number of volumes for each connectivity matrix.
+        keys (list[str]): Metadata keys in decreasing priority. Values can be numeric or
+            a sequence of strings.
+        predicate (Callable[[str], bool] | None): Optional filter applied when the
+            metadata value is a sequence of strings.
 
-    count : Sequence[int]
-        The total number of volumes for each connectivity matrix.
-
-    keys : list[str]
-        The list of metadata keys to use to calculate the percentage in decreasing order
-        of priority. The key can either be a float or a sequence of strings.
-
-    predicate : Callable[[str], bool] | None, optional
-        A function that takes a string and returns a boolean. If provided, it will be used
-        to filter the values in the metadata key if the metadata key is a sequence of strings.
-
-    Returns
-    -------
-    float
-        The mean percentage.
+    Returns:
+        float: The mean percentage.
     """
 
     values: Sequence[float | Sequence[str] | None] = [

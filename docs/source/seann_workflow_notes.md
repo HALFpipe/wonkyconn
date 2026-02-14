@@ -99,7 +99,7 @@ Traceback (most recent call last):
   File "/lustre07/scratch/seann/wonkyconn/wonkyconnenv/bin/wonkyconn", line 5, in <module>
     from wonkyconn.run import main
   File "/lustre07/scratch/seann/wonkyconn/wonkyconn/run.py", line 8, in <module>
-    from .workflow import workflow, gc_log
+    from .workflow import workflow
   File "/lustre07/scratch/seann/wonkyconn/wonkyconn/workflow.py", line 17, in <module>
     from .features.quality_control_connectivity import (
   File "/lustre07/scratch/seann/wonkyconn/wonkyconn/features/quality_control_connectivity.py", line 8, in <module>

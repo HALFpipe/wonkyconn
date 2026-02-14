@@ -11,25 +11,20 @@ from nilearn.maskers import NiftiLabelsMasker  # type: ignore[import-not-found]
 from scipy import stats
 
 from ..base import ConnectivityMatrix
-from ..logger import gc_log
+from ..logger import logger
 
 
 def remove_nan_from_matrix(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Remove rows/columns from a connectivity matrix that contain NaN values.
+    """Remove rows/columns from a connectivity matrix that contain NaN values.
+
     Checks only the upper triangle (including diagonal) for symmetric matrices.
 
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Square connectivity matrix.
+    Args:
+        matrix (np.ndarray): Square connectivity matrix.
 
-    Returns
-    -------
-    np.ndarray
-        Cleaned connectivity matrix with NaN rows/columns removed.
-    np.ndarray
-        Indices of the kept rows/columns.
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Cleaned connectivity matrix with NaN
+            rows/columns removed, and indices of the kept rows/columns.
     """
     # Get upper triangle (including diagonal)
     upper_tri = np.triu(matrix, k=0)
@@ -44,22 +39,15 @@ def remove_nan_from_matrix(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def remove_nan_roi_atlas(atlas: nib.Nifti1Image, kept_idx: np.ndarray) -> nib.Nifti1Image:
-    """
-    Remove ROIs from an atlas that are not present in a connectivity matrix.
+    """Remove ROIs from an atlas that are not present in a connectivity matrix.
 
-    Parameters
-    ----------
-    atlas_path : str
-        Path to the original NIfTI atlas.
-    conn_matrix : np.ndarray
-        Square connectivity matrix corresponding to the atlas.
-    save_path : str, optional
-        Path to save the masked atlas. If None, the image is returned but not saved.
+    Args:
+        atlas (nib.Nifti1Image): The atlas NIfTI image.
+        kept_idx (np.ndarray): Indices of rows/columns kept after NaN removal.
 
-    Returns
-    -------
-    nib.Nifti1Image
-        New atlas image with only ROIs present in conn_matrix.
+    Returns:
+        tuple[nib.Nifti1Image, list[int]]: Atlas image with only kept ROIs and
+            the list of kept label values.
     """
 
     # Load atlas
@@ -78,20 +66,14 @@ def remove_nan_roi_atlas(atlas: nib.Nifti1Image, kept_idx: np.ndarray) -> nib.Ni
 
 
 def overlapping_atlas_with_mask(subject_atlas: nib.Nifti1Image, group_mask: nib.Nifti1Image) -> nib.Nifti1Image:
-    """
-    Create a new atlas that only contains the regions that overlap with the group gradient mask.
+    """Create a new atlas containing only regions that overlap with the group gradient mask.
 
-    Parameters
-    ----------
-    subject_atlas : nib.Nifti1Image
-        The subject's atlas in NIfTI format.
-    group_mask : nib.Nifti1Image
-        The group gradient mask in NIfTI format.
+    Args:
+        subject_atlas (nib.Nifti1Image): The subject's atlas in NIfTI format.
+        group_mask (nib.Nifti1Image): The group gradient mask in NIfTI format.
 
-    Returns
-    -------
-    nib.Nifti1Image
-        A new atlas that only contains the regions that overlap with the group gradient mask.
+    Returns:
+        nib.Nifti1Image: Atlas with non-overlapping regions zeroed out.
     """
 
     mask_gradient_resampled = image.resample_to_img(
@@ -108,20 +90,14 @@ def overlapping_atlas_with_mask(subject_atlas: nib.Nifti1Image, group_mask: nib.
 
 
 def clean_matrix_from_atlas(matrix: np.ndarray, atlas: nib.Nifti1Image) -> np.ndarray:
-    """
-    Remove rows/columns from a connectivity matrix for regions not present in the atlas.
+    """Remove rows/columns from a connectivity matrix for regions not present in the atlas.
 
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Connectivity matrix
-    atlas : nib.Nifti1Image
-        Masked atlas
+    Args:
+        matrix (np.ndarray): Connectivity matrix.
+        atlas (nib.Nifti1Image): Masked atlas.
 
-    Returns
-    -------
-    np.ndarray
-        Connectivity matrix limited to regions present in the atlas.
+    Returns:
+        np.ndarray: Connectivity matrix limited to regions present in the atlas.
     """
 
     atlas_data = atlas.get_fdata()
@@ -139,18 +115,13 @@ def clean_matrix_from_atlas(matrix: np.ndarray, atlas: nib.Nifti1Image) -> np.nd
 def group_mean_connectivity(
     connectivity_matrices: Iterable[ConnectivityMatrix],
 ) -> np.ndarray:
-    """
-    Calculate the group mean connectivity matrix from a list of connectivity matrices.
+    """Calculate the group mean connectivity matrix from a list of connectivity matrices.
 
-    Parameters
-    ----------
-    connectivity_matrices : Iterable[ConnectivityMatrix]
-        List of connectivity matrices to process.
+    Args:
+        connectivity_matrices (Iterable[ConnectivityMatrix]): List of connectivity matrices to process.
 
-    Returns
-    -------
-    np.ndarray
-        The group mean connectivity matrix.
+    Returns:
+        np.ndarray: The group mean connectivity matrix.
     """
 
     matrices = [np.asarray(cm.load(), dtype=np.float64) for cm in connectivity_matrices]
@@ -168,26 +139,17 @@ def process_single_matrix(
     gradient_mask: nib.Nifti1Image,
     gradient_imgs: List[nib.Nifti1Image],
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Process a single connectivity matrix to compute its gradients aligned to group gradients.
+    """Process a single connectivity matrix to compute its gradients aligned to group gradients.
 
-    Parameters
-    ----------
-    connectivity_matrix : ConnectivityMatrix
-        The connectivity matrix to process.
-    atlas : nib.Nifti1Image
-        The atlas NIfTI image.
-    gradient_mask : nib.Nifti1Image
-        The group gradient mask NIfTI image.
-    gradient_imgs : List[nib.Nifti1Image]
-        List of group gradient NIfTI images.
+    Args:
+        connectivity_matrix (np.ndarray): The connectivity matrix to process.
+        atlas (nib.Nifti1Image): The atlas NIfTI image.
+        gradient_mask (nib.Nifti1Image): The group gradient mask NIfTI image.
+        gradient_imgs (List[nib.Nifti1Image]): List of group gradient NIfTI images.
 
-    Returns
-    -------
-    Tuple[np.ndarray, np.ndarray]
-        A tuple containing:
-        - The individual gradients aligned to group gradients.
-        - The group gradients as a NumPy array.
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: The individual gradients aligned to group
+            gradients and the group gradients as a NumPy array.
     """
     matrix = np.asarray(connectivity_matrix, dtype=np.float64)
     conn_clean, kept_idx = remove_nan_from_matrix(matrix)
@@ -201,7 +163,7 @@ def process_single_matrix(
     masked_atlas = overlapping_atlas_with_mask(atlas_mask_without_nan, gradient_mask)
     masked_matrix = clean_matrix_from_atlas(conn_clean, masked_atlas)
 
-    gc_log.info(f"Kept {len(masked_matrix)} regions after removing subcortical and NaNs.")
+    logger.info(f"Kept {len(masked_matrix)} regions after removing subcortical and NaNs.")
 
     # Create masker
     masker = NiftiLabelsMasker(labels_img=masked_atlas, mask_img=gradient_mask)
@@ -225,25 +187,15 @@ def extract_gradients(
     connectivity_matrices: Iterable[ConnectivityMatrix],
     atlas: nib.Nifti1Image,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Calculate the gradients for each individual and load group-level gradients
-    for alignment.
+    """Calculate gradients for each individual and load group-level gradients for alignment.
 
-    Parameters
-    ----------
-    connectivity_matrices : Iterable[ConnectivityMatrix]
-        List of connectivity matrices to process.
-    atlas : nib.Nifti1Image
-        The atlas NIfTI image.
-    n_jobs : int, optional
-        Number of parallel jobs to use. Default is 4.
+    Args:
+        connectivity_matrices (Iterable[ConnectivityMatrix]): List of connectivity matrices to process.
+        atlas (nib.Nifti1Image): The atlas NIfTI image.
 
-    Returns
-    -------
-    gradients : list[np.ndarray]
-        List of individual gradients
-    group_gradients_list : list[np.ndarray]
-        List of group-level gradients, one per individual
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Individual aligned gradients and group-level
+            template gradients.
     """
 
     repo_root = Path(__file__).resolve().parent.parent
@@ -265,21 +217,14 @@ def calculate_gradients_similarity(
     gradients: np.ndarray,
     group_gradients: np.ndarray,
 ) -> float:
-    """
-    Calculate similarity between individual and group gradients via Spearman
-    correlations + Fisher z-transform.
+    """Calculate similarity between individual and group gradients via Spearman correlations + Fisher z-transform.
 
-    Parameters
-    ----------
-    gradients : list[np.ndarray]
-        Individual gradients, shape (n_vertices, n_components)
-    group_gradients : list[np.ndarray]
-        Matched group-level gradients for each subject, same shape
+    Args:
+        gradients (np.ndarray): Individual gradients, shape ``(n_vertices, n_components)``.
+        group_gradients (np.ndarray): Matched group-level gradients, same shape.
 
-    Returns
-    -------
-    similarities : np.ndarray
-       Averaged similarity value across subject (mean Fisher-z across components)
+    Returns:
+        float: Averaged similarity (mean Fisher-z across components).
     """
 
     n_components = 3

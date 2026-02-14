@@ -29,11 +29,16 @@ from .features.quality_control_connectivity import (
     calculate_qcfc_percentage,
 )
 from .file_index.bids import BIDSIndex
-from .logger import gc_log, set_verbosity
+from .logger import logger, set_verbosity
 from .visualization.plot import plot
+
+_DEFAULT_N_SPLITS = 20
+_DEFAULT_N_PCA = 100
+_DEFAULT_N_JOBS = 4
 
 
 def is_halfpipe(index: BIDSIndex) -> bool:
+    """Check whether the indexed dataset was produced by HALFpipe."""
     for path in index.tags_by_paths.keys():
         try:
             derivatives_index = path.parts.index("derivatives")
@@ -46,13 +51,12 @@ def is_halfpipe(index: BIDSIndex) -> bool:
 
 
 def workflow(args: argparse.Namespace) -> None:
+    """Run the group-level connectivity quality-control pipeline."""
     if "pytest" not in sys.modules:
         set_verbosity(args.verbosity)
-    gc_log.debug(vars(args))
+    logger.debug(vars(args))
 
     # check if light mode is enabled - if so, it will not run the age and sex prediction and gradient similarity
-    # patch: currently, the textual app doesn't have the light mode flag,
-    # always run the full app with texture app
     disable_prediction_gradient = getattr(args, "light_mode", False)
 
     # Check BIDS path
@@ -82,8 +86,7 @@ def workflow(args: argparse.Namespace) -> None:
 
     # Load atlases
     atlases: dict[str, Atlas] = {name: Atlas.create(name, Path(atlas_path_str)) for name, atlas_path_str in args.atlas}
-    # seann: Add debugging to see what the atlas dictionary contains
-    gc_log.debug(f"Atlas dictionary contains: {list(atlases.keys())}")
+    logger.debug(f"Atlas dictionary contains: {list(atlases.keys())}")
 
     Group = namedtuple("Group", group_by)  # type: ignore[misc]
 
@@ -96,7 +99,7 @@ def workflow(args: argparse.Namespace) -> None:
 
         metadata = index.get_metadata(timeseries_path)
         if not metadata:
-            gc_log.warning(f"Skipping {timeseries_path} due to missing metadata")
+            logger.warning(f"Skipping {timeseries_path} due to missing metadata")
             continue
 
         if "NumberOfVolumes" not in metadata:
@@ -109,7 +112,7 @@ def workflow(args: argparse.Namespace) -> None:
         relmat_query = query | relmat_base_query | dict(extension=".tsv")
         for relmat_path in index.get(**relmat_query):
             group = Group(*(index.get_tag_value(relmat_path, key) for key in group_by))
-            gc_log.debug(f"Processing group {group} with file {relmat_path}")
+            logger.debug(f"Processing group {group} with file {relmat_path}")
             connectivity_matrix = ConnectivityMatrix(relmat_path, metadata, has_header=has_header)
             grouped_connectivity_matrix[group].append(connectivity_matrix)
             seg = index.get_tag_value(relmat_path, seg_key)
@@ -169,7 +172,7 @@ def make_record(
     atlases: dict[str, Atlas],
     disable_prediction_gradient: bool,
 ) -> dict[str, Any]:
-    # seann: added sub- tag when looking up subjects only if sub- is not already present
+    """Compute all QC metrics for a single group of connectivity matrices."""
     seg_subjects: list[str] = list()
     filtered: list[ConnectivityMatrix] = list()
 
@@ -187,7 +190,7 @@ def make_record(
             seg_subjects.append(found)
             filtered.append(c)
         else:
-            gc_log.info(f"Skipping subject {sub}: not found in phenotype file.")
+            logger.info(f"Skipping subject {sub}: not found in phenotype file.")
 
     #  Renaming for consistency
     connectivity_matrices[:] = filtered
@@ -199,7 +202,6 @@ def make_record(
     (seg,) = index.get_tag_values(seg_key, {c.path for c in connectivity_matrices})
     distance_matrix = distance_matrices[seg]
 
-    # seann: compute group-level GCOR statistics (mean and SEM)
     gcor = calculate_gcor(connectivity_matrices)
 
     dmn_similarity_summary, t_stats_dmn_vis_fpn = network_similarity(connectivity_matrices, region_memberships[seg])
@@ -216,7 +218,7 @@ def make_record(
     )
 
     if disable_prediction_gradient:
-        gc_log.info("Light mode enabled - skipping age and sex prediction, gradient similarity.")
+        logger.info("Light mode enabled - skipping age and sex prediction, gradient similarity.")
         record.update(
             dict(
                 sex_auc=np.nan,
@@ -244,10 +246,10 @@ def make_record(
             connectivity_matrices,
             ages=ages,
             genders=genders,
-            n_splits=20,
+            n_splits=_DEFAULT_N_SPLITS,
             random_state=42,
-            n_pca=100,
-            n_jobs=4,
+            n_pca=_DEFAULT_N_PCA,
+            n_jobs=_DEFAULT_N_JOBS,
         )
 
         # scores is:
@@ -263,8 +265,8 @@ def make_record(
         # }
         record.update(scores)
 
-    except Exception as exc:
-        gc_log.warning(f"[age_sex_prediction] Skipping age/sex prediction for this group due to error: {exc!r}")
+    except (ValueError, np.linalg.LinAlgError) as exc:
+        logger.warning(f"[age_sex_prediction] Skipping age/sex prediction for this group due to error: {exc!r}")
         # If it fails, we still want consistent columns in the output.
         record.update(
             dict(
@@ -283,6 +285,7 @@ def make_record(
 
 
 def load_data_frame(args: argparse.Namespace) -> pd.DataFrame:
+    """Load a phenotype TSV with ``participant_id``, ``gender``, and ``age`` columns."""
     data_frame = pd.read_csv(
         args.phenotypes,
         sep="\t",

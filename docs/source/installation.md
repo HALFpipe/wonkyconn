@@ -2,17 +2,17 @@
 
 ## Quick start (container)
 
-Pull the latest image from docker hub, available for version > `0.5.0`(Recommended)
+Pull the latest image from docker hub (Recommended).
 
 Apptainer (formerly known as Singularity; recommended):
 
 ```bash
-apptainer build wonkyconn.simg docker://haotingwang/wonkyconn:latest
+apptainer build wonkyconn-edge.simg docker://halfpipe/wonkyconn:edge
 ```
 
 Docker:
 ```bash
-docker pull haotingwang/wonkyconn:latest
+docker pull halfpipe/wonkyconn:edge
 ```
 
 ## Install as a python package
@@ -20,7 +20,7 @@ docker pull haotingwang/wonkyconn:latest
 Install the project in a Python environment:
 
 ```bash
-pip install git+https://github.com/SIMEXP/wonkyconn.git
+pip install git+https://github.com/halfpipe/wonkyconn.git
 ```
 
 This method is available for all versions.

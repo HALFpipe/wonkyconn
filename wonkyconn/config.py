@@ -7,6 +7,7 @@ from typing import Iterable, Sequence
 
 
 def _coerce_path(value: str | Path | None) -> Path | None:
+    """Expand and resolve *value* to an absolute ``Path``, or return ``None``."""
     if value is None:
         return None
     return Path(value).expanduser().resolve()
