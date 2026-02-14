@@ -139,7 +139,6 @@ dmypy.json
 
 *.code-workspace
 .DS_Store
-pixi.lock
 
 #scratch
 seann_scratch.sh
