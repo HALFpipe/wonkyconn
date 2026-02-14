@@ -51,8 +51,10 @@ def workflow(args: argparse.Namespace) -> None:
     gc_log.debug(vars(args))
 
     # check if light mode is enabled - if so, it will not run the age and sex prediction and gradient similarity
-    disable_prediction_gradient = args.light_mode
-
+    # patch: currently, the textual app doesn't have the light mode flag, 
+    # always run the full app with texture app
+    disable_prediction_gradient = getattr(args, 'light_mode', False) 
+        
     # Check BIDS path
     bids_dir = args.bids_dir
     index = BIDSIndex()
@@ -183,7 +185,7 @@ def make_record(
             seg_subjects.append(found)
             filtered.append(c)
         else:
-            print(f"Skipping subject {sub}: not found in phenotype file.")
+            gc_log.info(f"Skipping subject {sub}: not found in phenotype file.")
 
     #  Renaming for consistency
     connectivity_matrices[:] = filtered

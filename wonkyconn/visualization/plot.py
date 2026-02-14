@@ -66,6 +66,7 @@ def plot(records: list[dict[str, Any]], group_by: list[str], output_dir: Path) -
         nrows=2,
         ncols=6,
         figsize=(27, 9),
+
         constrained_layout=True,
         sharey=True,
         dpi=300,
