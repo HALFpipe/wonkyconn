@@ -239,8 +239,8 @@ def make_record(
 
     # age / sex predictability metrics
     try:
-        ages = seg_data_frame["age"].to_numpy()
-        genders = seg_data_frame["gender"].to_numpy()
+        ages: npt.NDArray[np.float64] = seg_data_frame["age"].to_numpy()
+        genders: npt.NDArray[np.str_] = seg_data_frame["gender"].to_numpy()
 
         scores = age_sex_scores(
             connectivity_matrices,
@@ -292,6 +292,8 @@ def load_data_frame(args: argparse.Namespace) -> pd.DataFrame:
         index_col="participant_id",
         dtype={"participant_id": str},
     )
+    if data_frame.index.has_duplicates:
+        raise ValueError("Phenotypes file has duplicate participant_id entries")
     if "gender" not in data_frame.columns:
         raise ValueError('Phenotypes file is missing the "gender" column')
     if "age" not in data_frame.columns:
