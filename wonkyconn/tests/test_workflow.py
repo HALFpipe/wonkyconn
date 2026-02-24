@@ -31,5 +31,5 @@ def test_load_data_frame(tmp_path: Path) -> None:
     # Check that we throw an error for duplicate participant_id entries
     data_frame = pd.concat([full_data_frame, full_data_frame.iloc[0:1]])  # Add a duplicate row
     data_frame.to_csv(phenotypes_path, sep="\t", index=False)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="duplicate participant_id"):
         load_data_frame(Namespace(phenotypes=str(phenotypes_path)))
