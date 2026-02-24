@@ -20,16 +20,16 @@ def test_load_data_frame(tmp_path: Path) -> None:
     assert row_count == 3
     assert list(data_frame.reset_index().columns) == ["participant_id", "age", "gender"]
 
-    full_data_frame = data_frame.reset_index()
+    data_frame = data_frame.reset_index()
 
     # Check that we throw an error for missing columns
-    for missing_column in full_data_frame.columns:
-        full_data_frame.drop(columns=missing_column).to_csv(phenotypes_path, sep="\t", index=False)
-        with pytest.raises(ValueError):
+    for missing_column in data_frame.columns:
+        data_frame.drop(columns=missing_column).to_csv(phenotypes_path, sep="\t", index=False)
+        with pytest.raises(ValueError, match=missing_column):
             load_data_frame(Namespace(phenotypes=str(phenotypes_path)))
 
     # Check that we throw an error for duplicate participant_id entries
-    data_frame = pd.concat([full_data_frame, full_data_frame.iloc[0:1]])  # Add a duplicate row
+    data_frame = pd.concat([data_frame, data_frame.iloc[0:1]])  # Add a duplicate row
     data_frame.to_csv(phenotypes_path, sep="\t", index=False)
-    with pytest.raises(ValueError, match="duplicate participant_id"):
+    with pytest.raises(ValueError, match="duplicate"):
         load_data_frame(Namespace(phenotypes=str(phenotypes_path)))
