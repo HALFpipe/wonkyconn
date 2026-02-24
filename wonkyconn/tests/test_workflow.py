@@ -23,8 +23,8 @@ def test_load_data_frame(tmp_path: Path) -> None:
     full_data_frame = data_frame.reset_index()
 
     # Check that we throw an error for missing columns
-    for missing_column in data_frame.reset_index().columns:
-        data_frame.reset_index().drop(columns=missing_column).to_csv(phenotypes_path, sep="\t", index=False)
+    for missing_column in full_data_frame.columns:
+        full_data_frame.drop(columns=missing_column).to_csv(phenotypes_path, sep="\t", index=False)
         with pytest.raises(ValueError):
             load_data_frame(Namespace(phenotypes=str(phenotypes_path)))
 
