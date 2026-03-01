@@ -100,7 +100,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload generated figures
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: figures
           path: figures_artifacts/**/*.png
