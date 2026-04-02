@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from sklearn.decomposition import PCA  # type: ignore[import-not-found]
 from sklearn.impute import SimpleImputer  # type: ignore[import-not-found]
 from sklearn.linear_model import LogisticRegression, Ridge  # type: ignore[import-not-found]
-from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit, cross_validate  # type: ignore[import-not-found]
+from sklearn.model_selection import StratifiedShuffleSplit, cross_validate  # type: ignore[import-not-found]
 from sklearn.pipeline import Pipeline  # type: ignore[import-not-found]
 from sklearn.preprocessing import LabelEncoder, StandardScaler  # type: ignore[import-not-found]
 
@@ -51,7 +51,12 @@ def training_pipeline(
     else:
         y_train = np.asarray(target_labels)
         estimator = Ridge(alpha=1.0)
-        cv_strategy = ShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=random_state)
+
+        bins = pd.qcut(y_train, q=5, labels=False, duplicates="drop")
+        cv_strategy = StratifiedShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=random_state)
+        splits = list(cv_strategy.split(np.zeros_like(bins), bins))
+        cv_strategy = splits
+
         scoring_metrics = {"mae": "neg_mean_absolute_error", "r2": "r2"}
 
     pipe = Pipeline(
