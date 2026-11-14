@@ -1,0 +1,159 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wonkyconn"
+description = "Evaluating the residual motion in fMRI connectome and visualise reports."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Hao-Ting Wang", email = "htwangtw@gmail.com" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = ["version"]
+
+[project.scripts]
+wonkyconn = "wonkyconn.run:main"
+
+[project.urls]
+"Homepage" = "https://github.com/SIMEXP/wonkyconn"
+"Documentation" = "https://wonkyconn.readthedocs.io/en/latest/"
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.environments]
+default = { features = ["dev", "editable", "test"], solve-group = "default" }
+docs = { features = ["docs"], solve-group = "default" }
+test = { features = ["editable", "test"], solve-group = "default" }
+# Use "wonkyconn" feature for production environment, so it is identifiable
+wonkyconn = { features = ["production"], solve-group = "production" }
+
+[tool.pixi.dependencies]
+numpy = "*"
+scipy = "*"
+patsy = "*"
+pandas = ">=2.0"
+rich = "*"
+numba = "*"
+seaborn = "*"
+matplotlib = "*"
+statsmodels = "*"
+tqdm = "*"
+nibabel = "*"
+
+[tool.pixi.feature.editable.pypi-dependencies]
+wonkyconn = { path = ".", editable = true }
+
+[tool.pixi.feature.production.pypi-dependencies]
+wonkyconn = { path = ".", editable = false }
+
+[tool.pixi.feature.test.dependencies]
+nibabel = "*"
+nilearn = "*"
+pytest = "*"
+pytest-cov = "*"
+templateflow = "*"
+
+p7zip = "*"
+datalad = ">=1.0"
+
+[tool.pixi.feature.test.tasks]
+lint = { cmd = "pre-commit run --all-files" }
+test = { cmd = "pytest -s --cov=wonkyconn --cov-report=xml --pyargs wonkyconn" }
+
+[tool.pixi.feature.docs.dependencies]
+sphinx = "*"
+sphinx_rtd_theme = "*"
+myst-parser = "*"
+sphinx-argparse = "*"
+
+[tool.pixi.feature.dev.dependencies]
+act = ">=0.2.82"
+ruff = "*"
+pre-commit = "*"
+mypy = "*"
+pandas-stubs = "*"
+types-tqdm = "*"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0+ci" # Fallback version for CI
+
+[tool.hatch.build.hooks.vcs]
+version-file = "wonkyconn/_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [".git_archival.txt"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["wonkyconn"]
+exclude = [".github"]
+
+[tool.ruff]
+line-length = 127
+
+[tool.ruff.lint]
+select = [
+  "F", # pyflakes
+  "E", # pycodestyle
+  "W", # pycodestyle
+  "I", # isort
+  "B", # bugbears
+  "N", # pep8-naming
+]
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+enable_error_code = ["ignore-without-code", "redundant-expr"] # "truthy-bool"
+no_implicit_optional = true
+show_error_codes = true
+# strict = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+  "bids.*",
+  "matplotlib.*",
+  "numba.*",
+  "patsy.*",
+  "rich.*",
+  "scipy.*",
+  "seaborn.*",
+  "statsmodels.*",
+  "templateflow.*",
+  "nibabel.*",
+]
+
+[[tool.mypy.overrides]]
+ignore_errors = true
+module = ["wonkyconn.tests.*", "conf"]
+
+[tool.pytest.ini_options]
+markers = [
+  "smoke: smoke tests that will run on a simulated dataset (deselect with '-m \"not smoke\"')",
+]
+# filterwarnings = ["error"]
+minversion = "7"
+log_cli_level = "INFO"
+xfail_strict = true
+testpaths = ["wonkyconn/tests"]
+addopts = [
+  "-ra",
+  "--strict-config",
+  "--strict-markers",
+  "--doctest-modules",
+  "-v",
+]

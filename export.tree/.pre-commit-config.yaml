@@ -1,0 +1,43 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+        exclude_types: [svg]
+    -   id: check-yaml
+    -   id: check-added-large-files
+        args: ['--maxkb=1000']
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.1
+    hooks:
+        - id: ruff
+          args: [--fix, --exit-non-zero-on-fix]
+        - id: ruff-format
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+    -   id: mypy
+        additional_dependencies: [pandas-stubs, types-tqdm, types-setuptools, types-Jinja2]
+        args: [--config-file=pyproject.toml]
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+    -   id: codespell
+        additional_dependencies:
+        - tomli
+        args: ["--skip=*.svg"]
+        exclude: 'paper/.*'
+-   repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+    -   id: hadolint-docker
+        name: Lint Dockerfiles
+        description: Runs hadolint Docker image to lint Dockerfiles
+        language: docker_image
+        types: [dockerfile]
+        entry: ghcr.io/hadolint/hadolint hadolint
+ci:
+    skip: [hadolint-docker]
