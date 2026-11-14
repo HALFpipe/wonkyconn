@@ -1,0 +1,3 @@
+165fd24c-3e2c-47eb-a683-808c56f8cff5 autoenable=true bucket=datalad datacenter=US encryption=none fileprefix=wonkyconn/ host=b7b557172bb5cd20f55ba90d802f9597.eu.r2.cloudflarestorage.com name=public-s3 port=80 protocol=https public=yes publicurl=https://datalad.fmri.science region=auto signature=v4 storageclass=STANDARD type=S3 timestamp=1794619981s
+c04eb54b-4b4e-5755-8436-866b043170fa autoenable=true encryption=none externaltype=datalad-archives name=datalad-archives type=external timestamp=1759455978s
+f6939685-d36a-4486-83c4-47a26db376ea autoenable=true location=https://gin.g-node.org/HALFpipe/wonkyconn name=gin type=git timestamp=1794622023s
